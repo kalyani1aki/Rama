@@ -1,3 +1,6 @@
+# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# Compiled output
 /dist
 /tmp
 /out-tsc
@@ -7,9 +10,6 @@
 /node_modules
 npm-debug.log
 yarn-error.log
-
-# profiling files
-chrome-profiler-events*.json
 
 # IDEs and editors
 .idea/
@@ -26,6 +26,7 @@ chrome-profiler-events*.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+!.vscode/mcp.json
 .history/*
 
 # Miscellaneous
@@ -36,6 +37,7 @@ chrome-profiler-events*.json
 /libpeerconnection.log
 testem.log
 /typings
+__screenshots__/
 
 # System files
 .DS_Store
