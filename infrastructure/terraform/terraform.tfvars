@@ -1,0 +1,23 @@
+# Copy this file to terraform.tfvars and fill in the values.
+#
+# Deployment workflow:
+#   1. terraform init
+#   2. terraform apply -target=aws_ecr_repository.backend -target=aws_ecr_repository.frontend
+#   3. Push images to ECR:  ./scripts/push-to-ecr.sh
+#   4. Fill in backend_image and frontend_image below
+#   5. terraform apply
+
+aws_region   = "eu-central-1"
+project_name = "rama"
+environment  = "dev"
+
+# Set these after pushing images to ECR:
+backend_image  = "886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-backend:latest"
+frontend_image = "886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-frontend:latest"
+
+# Admin email(s) — these users see all orders and the Export Excel button:
+admin_emails = "kalyani1kai@gmail.com,delhiprasad@gmail.com"
+
+# Optional overrides:
+# instance_type = "t3.micro"   # free-tier eligible; use t3.small (2 GB) if Spring Boot OOMs
+# key_name      = ""           # leave empty to use SSM Session Manager (no SSH key needed)
