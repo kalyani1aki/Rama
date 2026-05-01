@@ -1,32 +1,12 @@
 services:
-  mongodb:
-    image: remote-docker.artifactory.swisscom.com/mongo:8.2.6
-    container_name: rama-mongo
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_DATABASE: ramadb
-    volumes:
-      - rama-mongo-data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand({ping:1})", "--quiet"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
   backend:
     build: ./rama-backend
     container_name: rama-backend
     restart: unless-stopped
     ports:
       - "8080:8080"
-    environment:
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/ramadb
-    depends_on:
-      mongodb:
-        condition: service_healthy
+    volumes:
+      - rama-data:/root
 
   frontend:
     build: ./rama-frontend
@@ -40,5 +20,4 @@ services:
       - backend
 
 volumes:
-  rama-mongo-data:
-    name: rama-mongo-data
+  rama-data:

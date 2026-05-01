@@ -36,7 +36,7 @@ public class OrderExportController {
             Sheet sheet = wb.createSheet("Orders");
 
             Row header = sheet.createRow(0);
-            String[] columns = {"ID", "User Email", "Name", "Address", "Phone", "Quantity", "Created At"};
+            String[] columns = {"ID", "User Email", "Name", "Address", "Phone", "Quantity", "Pickup Location", "Created At"};
             for (int i = 0; i < columns.length; i++) {
                 header.createCell(i).setCellValue(columns[i]);
             }
@@ -50,7 +50,8 @@ public class OrderExportController {
                 row.createCell(3).setCellValue(order.getAddress());
                 row.createCell(4).setCellValue(order.getPhone());
                 row.createCell(5).setCellValue(order.getQuantity());
-                row.createCell(6).setCellValue(order.getCreatedAt() != null ? order.getCreatedAt().toString() : "");
+                row.createCell(6).setCellValue(order.getPickupLocation() != null ? order.getPickupLocation() : "");
+                row.createCell(7).setCellValue(order.getCreatedAt() != null ? order.getCreatedAt().toString() : "");
             }
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();

@@ -33,4 +33,22 @@ public class OrderController {
                 : repository.findByUserEmail(userEmail);
         return ResponseEntity.ok(orders);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteOrder(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Email", defaultValue = "guest") String userEmail) {
+        Order order = repository.findById(id).orElse(null);
+        if (order == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Role role = userService.getRoleByEmail(userEmail);
+        if (role == Role.ADMIN || order.getUserEmail().equals(userEmail)) {
+            repository.delete(order);
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.status(403).build();
+    }
 }

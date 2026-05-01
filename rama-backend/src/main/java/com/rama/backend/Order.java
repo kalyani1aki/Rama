@@ -15,15 +15,17 @@ public class Order {
     private String address;
     private String phone;
     private int quantity;
+    private String pickupLocation;
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public Order() {}
 
-    public Order(String name, String address, String phone, int quantity) {
+    public Order(String name, String address, String phone, int quantity, String pickupLocation) {
         this.name = name;
         this.address = address;
         this.phone = phone;
         this.quantity = quantity;
+        this.pickupLocation = pickupLocation;
     }
 
     public String getId() { return id; }
@@ -37,6 +39,8 @@ public class Order {
     public void setPhone(String phone) { this.phone = phone; }
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
+    public String getPickupLocation() { return pickupLocation; }
+    public void setPickupLocation(String pickupLocation) { this.pickupLocation = pickupLocation; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

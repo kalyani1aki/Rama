@@ -83,11 +83,12 @@
               "buildTarget": "rama-frontend:build:production"
             },
             "development": {
-              "buildTarget": "rama-frontend:build:development"
+              "buildTarget": "rama-frontend:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"
-        }
+        },
       }
     }
   }
