@@ -12,11 +12,11 @@ project_name = "rama"
 environment  = "dev"
 
 # Set these after pushing images to ECR:
-backend_image  = "886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-backend:latest"
-frontend_image = "886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-frontend:latest"
+backend_image  = "886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-backend:v1"
+frontend_image = "886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-frontend:v1"
 
 # Admin email(s) — these users see all orders and the Export Excel button:
-admin_emails = "kalyani1kai@gmail.com,delhiprasad@gmail.com"
+admin_emails = "kalyani1aki@gmail.com,delhiprasad@gmail.com"
 
 # Optional overrides:
 # instance_type = "t3.micro"   # free-tier eligible; use t3.small (2 GB) if Spring Boot OOMs

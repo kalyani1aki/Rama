@@ -50,7 +50,7 @@ resource "aws_instance" "app" {
 # Separate EBS volume for H2 data — survives instance replacement.
 # Do NOT delete this volume unless you want to wipe all order/user data.
 resource "aws_ebs_volume" "h2_data" {
-  availability_zone = aws_instance.app.availability_zone
+  availability_zone = aws_subnet.public[0].availability_zone
   size              = 10
   type              = "gp3"
   encrypted         = true

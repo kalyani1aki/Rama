@@ -65,7 +65,7 @@
 
 .brand-icon { font-size: 48px; width: 48px; height: 48px; color: #ffb300; }
 
-.brand-name { margin: 0; font-size: 2.8rem; font-weight: 900; color: #fff; letter-spacing: 2px; text-transform: uppercase; }
+.brand-name { margin: 0; font-size: 2.8rem; font-weight: 900; color: #fff; letter-spacing: 2px; }
 .brand-tagline { margin: 12px 0 0; font-size: 1rem; color: rgba(255,255,255,0.9); font-weight: 500; }
 .brand-origin { font-size: 0.8rem; color: rgba(255,255,255,0.7); margin-top: 4px; font-style: italic; }
 
@@ -137,12 +137,17 @@
 .header-title { font-size: 1.8rem; font-weight: 800; color: #ff6f00; letter-spacing: 1px; }
 .header-sub { font-size: 0.85rem; color: #8d6e63; font-weight: 500; }
 
-.header-user {
+.header-contact {
   margin-left: auto;
+  margin-right: 8px;
+}
+
+.header-user {
   display: flex;
   align-items: center;
   gap: 12px;
 }
+
 .avatar {
   width: 42px; height: 42px;
   border-radius: 12px;
@@ -157,12 +162,96 @@
   border: 2px solid #ffe0b2;
 }
 
-.user-name { font-size: 0.95rem; font-weight: 700; color: #3e2723; }
-.user-badge {
-  font-size: 0.75rem; color: #ff6f00;
-  background: #fff3e0;
-  padding: 2px 8px; border-radius: 6px;
+.user-info { display: flex; flex-direction: column; line-height: 1.2; }
+.role-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-top: 2px; }
+.role-icon { font-size: 14px; width: 14px; height: 14px; }
+
+.warning-hint { color: #d32f2f !important; font-weight: 600; font-size: 0.85rem; }
+.warning-border ::ng-deep .mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-notched-outline__leading,
+.warning-border ::ng-deep .mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-notched-outline__notch,
+.warning-border ::ng-deep .mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-notched-outline__trailing {
+  border-color: #d32f2f !important;
 }
+
+.order-summary { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.summary-item { display: flex; gap: 12px; font-size: 1.1rem; }
+.summary-item .label { font-weight: 700; color: #795548; min-width: 100px; }
+.summary-item .value { color: #3e2723; }
+.status-placed { color: #43a047; font-weight: 700; }
+.summary-actions { margin-top: 12px; display: flex; gap: 16px; }
+
+.primary-login {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+  z-index: 2;
+}
+.primary-login:hover { transform: scale(1.08); }
+
+.guest-btn-minimal {
+  color: #795548 !important;
+  font-weight: 500 !important;
+  text-decoration: underline;
+  opacity: 0.8;
+}
+.guest-btn-minimal:hover { opacity: 1; background: rgba(0,0,0,0.04) !important; }
+
+.guest-caution-box {
+  display: flex;
+  gap: 12px;
+  background: #fff9c4;
+  padding: 16px;
+  border-radius: 12px;
+  border-left: 5px solid #fbc02d;
+  margin-top: 16px;
+}
+.caution-text { font-size: 0.9rem; color: #5d4037; line-height: 1.4; }
+.caution-text strong { color: #e65100; }
+
+.contact-btn {
+  color: #ff8f00 !important;
+  font-weight: 600 !important;
+  border-radius: 12px !important;
+}
+
+.contact-menu {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+}
+
+.menu-contact-info {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 240px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #3e2723;
+  font-size: 0.95rem;
+}
+
+.menu-item mat-icon {
+  color: #ff8f00;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.menu-item a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.menu-item a:hover {
+  color: #ff8f00;
+  text-decoration: underline;
+}
+
 .logout-btn { color: #8d6e63 !important; }
 
 /* ===== CONTENT ===== */
@@ -181,6 +270,15 @@ mat-card-subtitle { color: #795548 !important; }
 
 .order-form { margin-top: 24px; }
 .full-width { width: 100%; margin-bottom: 12px; }
+
+.row-fields {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+}
+.half-width {
+  flex: 1;
+}
 
 /* Color overrides for Material fields */
 ::ng-deep .mat-mdc-form-field-focus-overlay { background: transparent !important; }

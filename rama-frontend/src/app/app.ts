@@ -16,6 +16,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSelectModule } from '@angular/material/select';
+import { MatMenuModule } from '@angular/material/menu';
 
 import { SocialAuthService, GoogleSigninButtonModule } from '@abacritt/angularx-social-login';
 import { AuthService, UserRole } from './auth.service';
@@ -45,7 +46,7 @@ interface BackendUser {
     MatCardModule, MatIconModule, MatTableModule,
     MatSnackBarModule, MatDividerModule, MatProgressSpinnerModule,
     MatTooltipModule, MatChipsModule, MatSelectModule,
-    GoogleSigninButtonModule,
+    MatMenuModule, GoogleSigninButtonModule,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',
@@ -62,9 +63,10 @@ export class App implements OnInit, OnDestroy {
   pickupLocations = ['Zurich', 'Bern', 'Baden', 'Lausanne'];
 
   orderForm: FormGroup = this.fb.group({
+    userEmail:      ['', [Validators.email]], // only for guest during order placement
     name:           ['', [Validators.required, Validators.minLength(2)]],
     address:        [''],
-    phone:          ['', [Validators.required, Validators.pattern(/^\+?[0-9\s\-]{7,15}$/)]],
+    phone:          ['', [Validators.required, Validators.pattern(/^\+?[0-9\s\-]{9,15}$/)]],
     quantity:       [1,  [Validators.required, Validators.min(1), Validators.max(999)]],
     pickupLocation: ['', [Validators.required]],
   });
@@ -72,10 +74,21 @@ export class App implements OnInit, OnDestroy {
   orders = signal<Order[] | undefined>(undefined);
   loading = signal(false);
   submitting = signal(false);
+  editingOrder = signal<Order | null>(null);
+
   private authSub?: Subscription;
   private apiUrl = '/api';
 
   get isAdmin(): boolean { return this.user()?.role === 'ADMIN'; }
+  get isGuest(): boolean { return this.user()?.provider === 'GUEST'; }
+
+  get maxQuantity(): number {
+    return this.user()?.provider === 'GOOGLE' ? 15 : 2;
+  }
+
+  get showQuantityWarning(): boolean {
+    return (this.orderForm.get('quantity')?.value || 0) > this.maxQuantity;
+  }
 
   get displayedColumns(): string[] {
     const cols = this.isAdmin
@@ -97,6 +110,8 @@ export class App implements OnInit, OnDestroy {
                 backendUser.role
               );
               this.orderForm.patchValue({ name });
+              this.orderForm.get('userEmail')?.clearValidators();
+              this.orderForm.get('userEmail')?.updateValueAndValidity();
               this.loadOrders();
             },
             error: () => {
@@ -104,6 +119,8 @@ export class App implements OnInit, OnDestroy {
                 { name, email, photoUrl: googleUser.photoUrl ?? '' },
                 'USER'
               );
+              this.orderForm.get('userEmail')?.clearValidators();
+              this.orderForm.get('userEmail')?.updateValueAndValidity();
               this.loadOrders();
             },
           });
@@ -115,6 +132,8 @@ export class App implements OnInit, OnDestroy {
 
   loginAsGuest() {
     this.authService.loginAsGuest();
+    this.orderForm.get('userEmail')?.setValidators([Validators.required, Validators.email]);
+    this.orderForm.get('userEmail')?.updateValueAndValidity();
     this.loadOrders();
   }
 
@@ -124,6 +143,7 @@ export class App implements OnInit, OnDestroy {
     }
     this.authService.logout();
     this.orders.set(undefined);
+    this.editingOrder.set(null);
     this.orderForm.reset({ quantity: 1 });
   }
 
@@ -141,10 +161,11 @@ export class App implements OnInit, OnDestroy {
           this.orders.set(reversed);
 
           // Pre-fill form from the most recent order if the form is currently empty
-          if (reversed.length > 0) {
+          if (reversed.length > 0 && this.user()?.provider === 'GOOGLE') {
             const lastOrder = reversed[0];
             const currentVal = this.orderForm.value;
             this.orderForm.patchValue({
+              name:           currentVal.name           || lastOrder.name,
               phone:          currentVal.phone          || lastOrder.phone,
               pickupLocation: currentVal.pickupLocation || lastOrder.pickupLocation,
               address:        currentVal.address        || lastOrder.address,
@@ -161,19 +182,50 @@ export class App implements OnInit, OnDestroy {
   submitOrder() {
     if (this.orderForm.invalid) return;
     this.submitting.set(true);
-    this.http.post<Order>(`${this.apiUrl}/orders`, this.orderForm.value)
-      .pipe(finalize(() => this.submitting.set(false)))
+
+    const orderData = { ...this.orderForm.value };
+
+    const isEdit = !!this.editingOrder();
+    const request = isEdit
+      ? this.http.put<Order>(`${this.apiUrl}/orders/${this.editingOrder()!.id}`, orderData)
+      : this.http.post<Order>(`${this.apiUrl}/orders`, orderData);
+
+    request.pipe(finalize(() => this.submitting.set(false)))
       .subscribe({
-        next: () => {
-          this.snackBar.open('Order placed successfully!', 'OK', { duration: 3000 });
-          // Keep phone and pickupLocation for the next order, but reset address and quantity
-          this.orderForm.patchValue({ address: '', quantity: 1 });
-          this.loadOrders();
+        next: (newOrder) => {
+          this.snackBar.open(isEdit ? 'Order updated successfully!' : 'Order placed successfully!', 'OK', { duration: 3000 });
+          this.editingOrder.set(null);
+          
+          if (this.isGuest) {
+            // For guests, we manually update the orders signal to show the just-placed order
+            // since the backend getOrders returns empty for guests.
+            this.orders.set([newOrder]);
+          } else {
+            this.loadOrders();
+          }
         },
-        error: () => {
-          this.snackBar.open('Failed to place order', 'Close', { duration: 3000 });
+        error: (err) => {
+          const msg = typeof err.error === 'string' ? err.error : 'Failed to process order';
+          this.snackBar.open(msg, 'Close', { duration: 7000 });
         },
       });
+  }
+
+  editOrder(order: Order) {
+    this.editingOrder.set(order);
+    this.orderForm.patchValue({
+      name: order.name,
+      address: order.address,
+      phone: order.phone,
+      quantity: order.quantity,
+      pickupLocation: order.pickupLocation,
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelEdit() {
+    this.editingOrder.set(null);
+    this.orderForm.reset({ quantity: 1 });
   }
 
   downloadExcel() {

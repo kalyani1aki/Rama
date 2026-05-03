@@ -16,25 +16,38 @@ curl -SL "https://github.com/docker/compose/releases/download/v2.29.0/docker-com
 chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
 # ── Data volume (separate EBS — survives instance replacement) ─────────────────
-# Nitro-based t3 instances present /dev/sdf as /dev/nvme1n1
+# Nitro-based t3 instances present /dev/sdf as /dev/nvme1n1 or /dev/nvme2n1
+echo "Waiting for data volume to attach..."
 for i in $(seq 1 30); do
-  if [ -b /dev/nvme1n1 ] || [ -b /dev/xvdf ]; then break; fi
+  # Check for common device names
+  DATA_DEVICE=$(lsblk -no PATH | grep -E '/dev/nvme[1-9]n1|/dev/xvdf' | head -n 1)
+  if [ -n "$DATA_DEVICE" ]; then 
+    echo "Found device: $DATA_DEVICE"
+    break 
+  fi
   sleep 2
 done
 
-if [ -b /dev/nvme1n1 ]; then
-  DATA_DEVICE="/dev/nvme1n1"
-else
-  DATA_DEVICE="/dev/xvdf"
+if [ -z "$DATA_DEVICE" ]; then
+  echo "ERROR: Data volume not found after 60 seconds."
+  exit 1
 fi
 
-if ! blkid $DATA_DEVICE 2>/dev/null; then
+# Only format if no filesystem exists
+if ! blkid $DATA_DEVICE > /dev/null 2>&1; then
+  echo "Formatting $DATA_DEVICE as ext4..."
   mkfs.ext4 $DATA_DEVICE
+else
+  echo "Existing filesystem detected on $DATA_DEVICE. Skipping format."
 fi
 
 mkdir -p /data
-mount $DATA_DEVICE /data
-echo "$DATA_DEVICE /data ext4 defaults,nofail 0 2" >> /etc/fstab
+mount $DATA_DEVICE /data || { echo "ERROR: Failed to mount $DATA_DEVICE"; exit 1; }
+
+# Add to fstab if not already present
+if ! grep -q "/data" /etc/fstab; then
+  echo "$DATA_DEVICE /data ext4 defaults,nofail 0 2" >> /etc/fstab
+fi
 
 # ── ECR login ──────────────────────────────────────────────────────────────────
 aws ecr get-login-password --region ${region} | \
@@ -46,10 +59,15 @@ cat > /home/ec2-user/docker-compose.yml << 'COMPOSE'
 services:
   backend:
     image: ${backend_image}
+#    TODO remove port
+    ports:
+      - "8080:8080"
     environment:
       - SERVER_PORT=8080
       - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/ramadb
-      - SPRING_H2_CONSOLE_ENABLED=false
+#      TODO remove spring enabe for h2. clean next 2 lines
+      - SPRING_H2_CONSOLE_ENABLED=true
+      - SPRING_H2_CONSOLE_SETTINGS_WEB_ALLOW_OTHERS=true
       - APP_ADMIN_EMAILS=${admin_emails}
     volumes:
       - /data:/data
@@ -60,7 +78,7 @@ services:
         max-size: "50m"
         max-file: "3"
     healthcheck:
-      test: ["CMD-SHELL", "echo > /dev/tcp/localhost/8080"]
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8080'"]
       interval: 30s
       timeout: 5s
       retries: 3
