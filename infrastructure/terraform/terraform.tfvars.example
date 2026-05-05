@@ -18,6 +18,12 @@ frontend_image = "123456789012.dkr.ecr.eu-central-1.amazonaws.com/rama-frontend:
 # Admin email(s) — these users see all orders and the Export Excel button:
 admin_emails = "yourname@gmail.com"
 
+# Gmail App Password for sending notifications:
+mail_password = "abcd efgh klmn opwe"
+
+# Public URL of the application:
+website_url = "http://rama-app.duckdns.org/"
+
 # Optional overrides:
 # instance_type = "t3.micro"   # free-tier eligible; use t3.small (2 GB) if Spring Boot OOMs
 # key_name      = ""           # leave empty to use SSM Session Manager (no SSH key needed)

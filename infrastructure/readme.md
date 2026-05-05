@@ -100,6 +100,8 @@ AWS_ACCOUNT_ID=886121091893 \
  ./scripts/push-to-ecr.sh latest
 
 ```
+Login to ecr
+aws ecr get-login-password --region eu-central-1 --profile rama-deployer | docker login --username AWS --password-stdin 886121091893.dkr.ecr.eu-central-1.amazonaws.com
 
 Then on the EC2 instance, pull and restart the backend:
 aws ssm start-session --target i-09821001789451c48 --region eu-central-1 --profile rama-deployer
@@ -114,6 +116,8 @@ docker compose up -d backend
 
 Rebuild and Push the Backend Image:
 You need to rebuild the Docker image so the code change is included.
+on rama-backend:
+./mvnw package -DskipTests -q
 
 1     # From the project root
 2     docker build --no-cache -t 886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-backend:v1 rama-backend/

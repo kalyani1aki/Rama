@@ -7,13 +7,14 @@
         <div class="brand-icon-wrap">
           <img src="images/mango.png" alt="Banganapalli Mango Logo" class="brand-logo-img" />
         </div>
-        <h1 class="brand-name">RaMa</h1>
-        <p class="brand-tagline">Premium Banganapalli Mangoes</p>
-        <p class="brand-origin">Directly from our farm in Tirupati, India to Switzerland</p>
+<!--        <h1 class="brand-name"><span class="brand-accent-header">Ra</span><span class="brand-accent-header">Ma</span></h1>-->
+        <h1 class="brand-name"><span class="brand-accent-header">RaMa</span></h1>
+        <p class="brand-tagline">Premium Banginapalli Mangoes</p>
+        <p class="brand-origin">Directly from our farm in India to Switzerland</p>
       </div>
 
       <mat-card-content class="login-actions">
-        <p class="login-prompt">Freshness delivered to your door.</p>
+        <p class="login-prompt">Order your mangoes now!</p>
 
         <!-- Google Sign-In (Primary Action) -->
         <div class="google-btn-wrap primary-login">
@@ -57,12 +58,13 @@
         <img src="images/mango.png" alt="Logo" class="header-logo-img" />
         <span class="header-title">RaMa</span>
       </div>
-      <span class="header-sub">Authentic Banganapalli Mangoes</span>
+     <!-- <span class="header-sub">Authentic Banganapalli Mangoes</span>-->
+      <span class="header-sub"><span class="brand-accent">Ra</span>mannagari <span class="brand-accent">Ma</span>ngoes</span>
 
       <!-- Contact Us in Header -->
       <div class="header-contact">
         <button mat-button [matMenuTriggerFor]="contactMenu" class="contact-btn">
-          <mat-icon>contact_support</mat-icon>
+    <!--      <mat-icon>contact_support</mat-icon>-->
           Contact Us
         </button>
         <mat-menu #contactMenu="matMenu" xPosition="before" class="contact-menu">
@@ -106,13 +108,79 @@
     </div>
 
     <div class="content">
+      <!-- Info Card: About the Mangoes, Price & Delivery -->
+      <mat-card class="info-card-highlight">
+        <mat-card-header>
+          <div mat-card-avatar class="info-avatar">
+            <img src="images/mango_green.png" alt="Mango" class="info-avatar-img" />
+          </div>
+          <mat-card-title>Authentic Banginapalli Mangoes - 2026 Season</mat-card-title>
+          <mat-card-subtitle>Directly from our farm to Swiss</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content class="info-text-content">
+<!--          <p>
+            The taste of mangoes available in Switzerland often doesn't compare to the authentic flavor of those from our own garden.
+            Driven by a personal passion for quality, I am bringing <strong>premium Banginapalli Mangoes</strong> to Switzerland once again.
+          </p>-->
+
+          <p>
+            The mangoes available in Switzerland rarely match the authentic flavor of those from our own garden.
+            Driven by a passion for quality, I am once again bringing <strong>premium Banginapalli mangoes</strong> to Switzerland
+          </p>
+
+          <div class="info-details-grid">
+            <div class="info-detail-item">
+              <mat-icon>inventory_2</mat-icon>
+              <div>
+                <strong>Packaging & Size</strong>
+                <p>3kg boxes (approx. 5-8 mangoes per box depending on size).</p>
+              </div>
+            </div>
+            <div class="info-detail-item">
+              <mat-icon>payments</mat-icon>
+              <div>
+                <strong>Price</strong>
+                <p>CHF 30 per box</p>
+              </div>
+            </div>
+            <div class="info-detail-item">
+              <mat-icon>event_available</mat-icon>
+              <div>
+                <strong>Arrival</strong>
+                <p>Tentatively end of May 2026. Final dates will be confirmed soon.</p>
+              </div>
+            </div>
+            <div class="info-detail-item">
+              <mat-icon>local_shipping</mat-icon>
+              <div>
+                <strong>Collection & Delivery</strong>
+                <p>Orders shall be collected from a <span class="emphasis-collection">designated location</span> in your city.</p>
+              </div>
+            </div>
+            </div>
+<!--
+            <div class="delivery-special-note">
+            <mat-icon>info</mat-icon>
+            <strong>Delivery Note:</strong> Free home delivery is provided for collective orders of <strong>10+ boxes</strong> to a single address, and in other <strong>exceptional cases</strong>.
+            </div>-->
+
+            <p class="info-note">
+            <em>Note: Collective group orders are highly appreciated to help streamline logistics.</em>
+            </p>
+            <p class="info-note">
+            <!--Know other mango lovers? Spread the joy and share our website: <a [href]="websiteUrl">{{websiteUrl}}</a>-->
+              Spread the joy for mango lovers by sharing: <a [href]="websiteUrl">{{websiteUrl}}</a>
+            </p>
+        </mat-card-content>
+      </mat-card>
+
       <!-- Order Form Card -->
       @if ((orders()?.length === 0 && !isAdmin) || editingOrder() || (isAdmin && !editingOrder())) {
         <mat-card class="form-card">
           <mat-card-header>
             <mat-card-title>
               <mat-icon color="primary">{{ editingOrder() ? 'edit' : 'add_shopping_cart' }}</mat-icon>
-              {{ editingOrder() ? 'Edit your Mango Order' : 'Place your Mango Order' }}
+              {{ editingOrder() ? 'Edit your Mangoes Order' : 'Place your Mangoes Order' }}
             </mat-card-title>
             <mat-card-subtitle>Directly from Tirupati farm to your home</mat-card-subtitle>
           </mat-card-header>
@@ -135,35 +203,9 @@
                 <input matInput formControlName="name" placeholder="e.g. John Smith" />
                 <mat-icon matSuffix>person</mat-icon>
                 @if (orderForm.get('name')?.invalid && orderForm.get('name')?.touched) {
-                  <mat-error>Name is required (min 2 characters)</mat-error>
+                  <mat-error>Numbers/Special characters are not allowed</mat-error>
                 }
               </mat-form-field>
-
-              <div class="row-fields">
-                <mat-form-field appearance="outline" class="half-width">
-                  <mat-label>Valid Phone Number</mat-label>
-                  <input matInput formControlName="phone" placeholder="e.g. 079 123 45 67" />
-                  <mat-icon matSuffix>phone</mat-icon>
-                  @if (orderForm.get('phone')?.invalid && orderForm.get('phone')?.touched) {
-                    <mat-error>At least 9 digits required</mat-error>
-                  }
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="half-width" [class.warning-border]="showQuantityWarning">
-                  <mat-label>Quantity (Boxes)</mat-label>
-                  <input matInput type="number" formControlName="quantity" min="1" max="999" />
-                  <mat-icon matSuffix>inventory_2</mat-icon>
-                  @if (orderForm.get('quantity')?.invalid && orderForm.get('quantity')?.touched) {
-                    <mat-error>Quantity must be 1–999</mat-error>
-                  }
-                  @if (showQuantityWarning) {
-                    <mat-hint color="warn" class="warning-hint">
-                      Limit is {{ maxQuantity }} boxes. Contact <a href="mailto:mangoes.bern@gmail.com">mangoes.bern@gmail.com</a> for larger orders.
-                    </mat-hint>
-                  }
-                </mat-form-field>
-              </div>
-
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Pickup Location</mat-label>
                 <mat-select formControlName="pickupLocation">
@@ -172,27 +214,47 @@
                     <mat-option [value]="loc">{{ loc }}</mat-option>
                   }
                 </mat-select>
-                <mat-icon matSuffix>location_city</mat-icon>
+                <mat-icon matSuffix>home</mat-icon>
                 @if (orderForm.get('pickupLocation')?.invalid && orderForm.get('pickupLocation')?.touched) {
                   <mat-error>Pickup location is required</mat-error>
                 }
               </mat-form-field>
+              <div class="row-fields">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Valid Phone Number</mat-label>
+                  <input matInput formControlName="phone" placeholder="e.g. 079 123 45 67" />
+                  <mat-icon matSuffix>phone</mat-icon>
+                  @if (orderForm.get('phone')?.invalid && orderForm.get('phone')?.touched) {
+                      <mat-error>Min 10 digits required</mat-error>
+                  }
+                </mat-form-field>
 
-              @if (!isGuest) {
+
+                <mat-form-field appearance="outline" class="half-width" [class.warning-border]="showQuantityWarning">
+                  <mat-label>Quantity (Boxes)</mat-label>
+                  <input matInput type="number" formControlName="quantity" min="1" max="15" />
+                  <mat-icon matSuffix>inventory_2</mat-icon>
+                  @if (orderForm.get('quantity')?.invalid && orderForm.get('quantity')?.touched) {
+                    <!--<mat-error>Quantity must be 1–{{maxQuantity}}. For bulk orders contact <a href="mailto:mangoes.bern@gmail.com">mangoes.bern@gmail.com</a></mat-error>-->
+                    <mat-error>Quantity must be 1–{{maxQuantity}}. For more orders contact us</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+
                 <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Delivery Address</mat-label>
+                  <mat-label>Your Address</mat-label>
                   <textarea matInput formControlName="address" placeholder="Street, City, ZIP" rows="2"></textarea>
                   <mat-icon matSuffix>location_on</mat-icon>
-                  <mat-hint>Free home delivery for orders > 10 boxes!</mat-hint>
                 </mat-form-field>
-              }
 
               @if (isGuest) {
                 <div class="guest-caution-box">
                   <mat-icon color="warn">warning</mat-icon>
                   <div class="caution-text">
                     <strong>Guest Limitation:</strong> You can only place <strong>one order</strong> of up to <strong>2 boxes</strong>.
-                    For advanced order management (viewing history, unlimited updates), please <strong>login via Google</strong>.
+                  <!--  <strong>Email is mandatory</strong> to receive your order confirmation.-->
+                    For advanced features like <strong>viewing/editing orders</strong>, please
+                    <a href="javascript:void(0)" (click)="logout()" class="login-link">login via Google</a>.
                     <br><br>
                     <small>Please ensure your details are genuine as guest contact details are not verified.</small>
                   </div>
@@ -211,7 +273,7 @@
                 <mat-icon>clear</mat-icon> Reset
               </button>
             }
-            <button mat-raised-button color="primary" [disabled]="orderForm.invalid || submitting() || showQuantityWarning" (click)="submitOrder()">
+            <button mat-raised-button color="primary" [disabled]="orderForm.invalid || submitting() || showQuantityWarning || (editingOrder() && orderForm.pristine)" (click)="submitOrder()">
               @if (submitting()) {
                 <mat-progress-spinner diameter="20" mode="indeterminate" color="accent"></mat-progress-spinner>
               } @else {
@@ -228,7 +290,7 @@
           <mat-card-header>
             <mat-card-title>
               <mat-icon color="accent">shopping_bag</mat-icon>
-              My Mango Order
+              My Mangoes Order
             </mat-card-title>
             <mat-card-subtitle>Order details recorded</mat-card-subtitle>
           </mat-card-header>

@@ -64,12 +64,13 @@ export class App implements OnInit, OnDestroy {
 
   orderForm: FormGroup = this.fb.group({
     userEmail:      ['', [Validators.email]], // only for guest during order placement
-    name:           ['', [Validators.required, Validators.minLength(2)]],
+    name:           ['', [Validators.required, Validators.minLength(2), Validators.pattern(/^[a-zA-Z\s]*$/)]],
     address:        [''],
-    phone:          ['', [Validators.required, Validators.pattern(/^\+?[0-9\s\-]{9,15}$/)]],
+    phone:          ['', [Validators.required, Validators.minLength(9), Validators.maxLength(15), Validators.pattern(/^\+?[0-9\s\-]*$/)]],
     quantity:       [1,  [Validators.required, Validators.min(1), Validators.max(999)]],
     pickupLocation: ['', [Validators.required]],
   });
+
 
   orders = signal<Order[] | undefined>(undefined);
   loading = signal(false);
@@ -83,10 +84,16 @@ export class App implements OnInit, OnDestroy {
   get isGuest(): boolean { return this.user()?.provider === 'GUEST'; }
 
   get maxQuantity(): number {
+    if (this.isAdmin) return 999;
     return this.user()?.provider === 'GOOGLE' ? 15 : 2;
   }
 
+  get websiteUrl(): string {
+    return window.location.origin;
+  }
+
   get showQuantityWarning(): boolean {
+    if (this.isAdmin) return false;
     return (this.orderForm.get('quantity')?.value || 0) > this.maxQuantity;
   }
 
@@ -98,6 +105,15 @@ export class App implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    // If a session was restored from localStorage, load orders immediately
+    if (this.user()) {
+      this.updateValidators();
+      this.loadOrders();
+      if (this.user()?.provider === 'GOOGLE') {
+        this.orderForm.patchValue({ name: this.user()?.name });
+      }
+    }
+
     this.authSub = this.socialAuthService.authState.subscribe((googleUser) => {
       if (googleUser) {
         const email = googleUser.email ?? '';
@@ -110,8 +126,7 @@ export class App implements OnInit, OnDestroy {
                 backendUser.role
               );
               this.orderForm.patchValue({ name });
-              this.orderForm.get('userEmail')?.clearValidators();
-              this.orderForm.get('userEmail')?.updateValueAndValidity();
+              this.updateValidators();
               this.loadOrders();
             },
             error: () => {
@@ -119,8 +134,7 @@ export class App implements OnInit, OnDestroy {
                 { name, email, photoUrl: googleUser.photoUrl ?? '' },
                 'USER'
               );
-              this.orderForm.get('userEmail')?.clearValidators();
-              this.orderForm.get('userEmail')?.updateValueAndValidity();
+              this.updateValidators();
               this.loadOrders();
             },
           });
@@ -130,10 +144,27 @@ export class App implements OnInit, OnDestroy {
 
   ngOnDestroy() { this.authSub?.unsubscribe(); }
 
+  private updateValidators() {
+    const qtyControl = this.orderForm.get('quantity');
+    if (qtyControl) {
+      qtyControl.setValidators([Validators.required, Validators.min(1), Validators.max(this.maxQuantity)]);
+      qtyControl.updateValueAndValidity();
+    }
+
+    const emailControl = this.orderForm.get('userEmail');
+    if (emailControl) {
+      if (this.isGuest) {
+        emailControl.setValidators([Validators.required, Validators.email]);
+      } else {
+        emailControl.clearValidators();
+      }
+      emailControl.updateValueAndValidity();
+    }
+  }
+
   loginAsGuest() {
     this.authService.loginAsGuest();
-    this.orderForm.get('userEmail')?.setValidators([Validators.required, Validators.email]);
-    this.orderForm.get('userEmail')?.updateValueAndValidity();
+    this.updateValidators();
     this.loadOrders();
   }
 
@@ -145,6 +176,7 @@ export class App implements OnInit, OnDestroy {
     this.orders.set(undefined);
     this.editingOrder.set(null);
     this.orderForm.reset({ quantity: 1 });
+    this.updateValidators();
   }
 
   loadOrders() {
@@ -195,7 +227,7 @@ export class App implements OnInit, OnDestroy {
         next: (newOrder) => {
           this.snackBar.open(isEdit ? 'Order updated successfully!' : 'Order placed successfully!', 'OK', { duration: 3000 });
           this.editingOrder.set(null);
-          
+
           if (this.isGuest) {
             // For guests, we manually update the orders signal to show the just-placed order
             // since the backend getOrders returns empty for guests.

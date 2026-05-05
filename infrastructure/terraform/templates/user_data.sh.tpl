@@ -69,6 +69,8 @@ services:
       - SPRING_H2_CONSOLE_ENABLED=true
       - SPRING_H2_CONSOLE_SETTINGS_WEB_ALLOW_OTHERS=true
       - APP_ADMIN_EMAILS=${admin_emails}
+      - MAIL_PASSWORD=${mail_password}
+      - WEBSITE_URL=${website_url}
     volumes:
       - /data:/data
     restart: unless-stopped

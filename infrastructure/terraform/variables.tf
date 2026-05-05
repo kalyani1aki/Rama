@@ -40,6 +40,17 @@ variable "admin_emails" {
   default     = ""
 }
 
+variable "mail_password" {
+  type        = string
+  description = "Gmail App Password for mangoes.bern@gmail.com"
+  sensitive   = true
+}
+
+variable "website_url" {
+  type        = string
+  description = "The public URL of the website"
+}
+
 variable "backend_image" {
   type        = string
   description = "Full ECR image URI for the backend (e.g. 123456789012.dkr.ecr.eu-central-1.amazonaws.com/rama-backend:latest)"

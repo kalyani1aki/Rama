@@ -12,36 +12,69 @@ export interface RamaUser {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private readonly STORAGE_KEY = 'rama_user_session';
   private _user = signal<RamaUser | null>(null);
   readonly user = this._user.asReadonly();
 
+  constructor() {
+    this.restoreSession();
+  }
+
+  private restoreSession() {
+    const saved = localStorage.getItem(this.STORAGE_KEY);
+    if (saved) {
+      try {
+        this._user.set(JSON.parse(saved));
+      } catch {
+        localStorage.removeItem(this.STORAGE_KEY);
+      }
+    }
+  }
+
+  private saveSession(user: RamaUser | null) {
+    if (user) {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(this.STORAGE_KEY);
+    }
+  }
+
   loginAsGuest() {
-    this._user.set({
+    const guest: RamaUser = {
       name: 'Guest',
-      email: 'guest@rama.local', // Placeholder, will be replaced by form input
+      email: 'guest@rama.local',
       photoUrl: '',
       provider: 'GUEST',
       role: 'USER',
-    });
+    };
+    this._user.set(guest);
+    this.saveSession(guest);
   }
 
   loginWithGoogle(googleUser: { name: string; email: string; photoUrl: string }, role: UserRole) {
-    this._user.set({
+    const user: RamaUser = {
       name: googleUser.name,
       email: googleUser.email,
       photoUrl: googleUser.photoUrl,
       provider: 'GOOGLE',
       role,
-    });
+    };
+    this._user.set(user);
+    this.saveSession(user);
   }
 
   updateRole(role: UserRole) {
     const current = this._user();
-    if (current) this._user.set({ ...current, role });
+    if (current) {
+      const updated = { ...current, role };
+      this._user.set(updated);
+      this.saveSession(updated);
+    }
   }
 
   logout() {
     this._user.set(null);
+    this.saveSession(null);
   }
 
   isLoggedIn(): boolean {

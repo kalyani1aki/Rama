@@ -10,10 +10,12 @@ public class OrderController {
 
     private final OrderRepository repository;
     private final UserService userService;
+    private final EmailService emailService;
 
-    public OrderController(OrderRepository repository, UserService userService) {
+    public OrderController(OrderRepository repository, UserService userService, EmailService emailService) {
         this.repository = repository;
         this.userService = userService;
+        this.emailService = emailService;
     }
 
     @PostMapping
@@ -21,8 +23,11 @@ public class OrderController {
             @RequestBody Order order,
             @RequestHeader(value = "X-User-Email", defaultValue = "guest") String userEmail) {
         
-        // Use the email from the request body if it's a guest session, otherwise use the header
         String effectiveEmail = "guest@rama.local".equals(userEmail) ? order.getUserEmail() : userEmail;
+
+        if (effectiveEmail == null || effectiveEmail.trim().isEmpty() || "guest".equals(effectiveEmail)) {
+            return ResponseEntity.badRequest().body("Email is mandatory for all users.");
+        }
 
         if (repository.existsByUserEmail(effectiveEmail)) {
             return ResponseEntity.badRequest().body("Order is already placed for " + effectiveEmail + ". Please contact mangoes.bern@gmail.com.");
@@ -34,7 +39,13 @@ public class OrderController {
         }
 
         order.setUserEmail(effectiveEmail);
-        return ResponseEntity.ok(repository.save(order));
+        Order savedOrder = repository.save(order);
+        try {
+            emailService.sendOrderConfirmation(savedOrder);
+        } catch (Exception e) {
+            System.err.println("Failed to send order confirmation email: " + e.getMessage());
+        }
+        return ResponseEntity.ok(savedOrder);
     }
 
     @PutMapping("/{id}")
@@ -49,7 +60,6 @@ public class OrderController {
         }
 
         Role role = userService.getRoleByEmail(userEmail);
-        // Guests can't update via this logic because they don't have stable identity in headers
         if (role != Role.ADMIN && !order.getUserEmail().equals(userEmail)) {
             return ResponseEntity.status(403).build();
         }
@@ -65,16 +75,27 @@ public class OrderController {
         order.setQuantity(orderDetails.getQuantity());
         order.setPickupLocation(orderDetails.getPickupLocation());
 
-        return ResponseEntity.ok(repository.save(order));
+        Order savedOrder = repository.save(order);
+        try {
+            emailService.sendOrderUpdateNotification(savedOrder);
+        } catch (Exception e) {
+            System.err.println("Failed to send order update email: " + e.getMessage());
+        }
+        return ResponseEntity.ok(savedOrder);
     }
 
     private String validateOrder(Order order, String userEmail) {
+        Role role = userService.getRoleByEmail(userEmail);
+        if (role == Role.ADMIN) {
+            return null; // No restriction for admin
+        }
+
         boolean isGoogleUser = userService.isGoogleUser(userEmail);
-        int maxQuantity = isGoogleUser ? 15 : 2;
+        int maxQuantity = isGoogleUser ? 10 : 2;
         String userType = isGoogleUser ? "Google" : "guest";
 
         if (order.getQuantity() > maxQuantity) {
-            return "Limit Quantity to " + maxQuantity + " for " + userType + " users. If more placed show a warning to contact email: mangoes.bern@gmail.com";
+            return "Limit Quantity to " + maxQuantity + " for " + userType + " users. If more boxes are required, please contact us at mangoes.bern@gmail.com.";
         }
         return null;
     }
@@ -106,6 +127,11 @@ public class OrderController {
         Role role = userService.getRoleByEmail(userEmail);
         if (role == Role.ADMIN || order.getUserEmail().equals(userEmail)) {
             repository.delete(order);
+            try {
+                emailService.sendOrderDeletionNotification(order);
+            } catch (Exception e) {
+                System.err.println("Failed to send order deletion email: " + e.getMessage());
+            }
             return ResponseEntity.noContent().build();
         }
 

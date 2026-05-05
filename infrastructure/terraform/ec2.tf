@@ -36,6 +36,8 @@ resource "aws_instance" "app" {
     backend_image  = var.backend_image
     frontend_image = var.frontend_image
     admin_emails   = var.admin_emails
+    mail_password  = var.mail_password
+    website_url    = var.website_url
   })
 
   root_block_device {
