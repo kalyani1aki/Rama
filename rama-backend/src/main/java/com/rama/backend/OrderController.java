@@ -23,19 +23,19 @@ public class OrderController {
             @RequestBody Order order,
             @RequestHeader(value = "X-User-Email", defaultValue = "guest") String userEmail) {
         
-        String effectiveEmail = "guest@rama.local".equals(userEmail) ? order.getUserEmail() : userEmail;
+        String effectiveEmail = "guest@rama.local".equals(userEmail) || "guest".equals(userEmail)
+                ? order.getUserEmail() 
+                : userEmail;
 
-        if (effectiveEmail == null || effectiveEmail.trim().isEmpty() || "guest".equals(effectiveEmail)) {
+        System.out.println("DEBUG: Creating order. Header email: " + userEmail + ", Body email: " + order.getUserEmail() + ", Effective email: " + effectiveEmail);
+
+        if (effectiveEmail == null || effectiveEmail.trim().isEmpty() || "guest".equals(effectiveEmail) || "guest@rama.local".equals(effectiveEmail)) {
+            System.out.println("DEBUG: Validation failed - Email is mandatory");
             return ResponseEntity.badRequest().body("Email is mandatory for all users.");
         }
 
         if (repository.existsByUserEmail(effectiveEmail)) {
             return ResponseEntity.badRequest().body("Order is already placed for " + effectiveEmail + ". Please contact mangoes.bern@gmail.com.");
-        }
-
-        String validationError = validateOrder(order, effectiveEmail);
-        if (validationError != null) {
-            return ResponseEntity.badRequest().body(validationError);
         }
 
         order.setUserEmail(effectiveEmail);
@@ -64,11 +64,6 @@ public class OrderController {
             return ResponseEntity.status(403).build();
         }
 
-        String validationError = validateOrder(orderDetails, userEmail);
-        if (validationError != null) {
-            return ResponseEntity.badRequest().body(validationError);
-        }
-
         order.setName(orderDetails.getName());
         order.setAddress(orderDetails.getAddress());
         order.setPhone(orderDetails.getPhone());
@@ -82,22 +77,6 @@ public class OrderController {
             System.err.println("Failed to send order update email: " + e.getMessage());
         }
         return ResponseEntity.ok(savedOrder);
-    }
-
-    private String validateOrder(Order order, String userEmail) {
-        Role role = userService.getRoleByEmail(userEmail);
-        if (role == Role.ADMIN) {
-            return null; // No restriction for admin
-        }
-
-        boolean isGoogleUser = userService.isGoogleUser(userEmail);
-        int maxQuantity = isGoogleUser ? 10 : 2;
-        String userType = isGoogleUser ? "Google" : "guest";
-
-        if (order.getQuantity() > maxQuantity) {
-            return "Limit Quantity to " + maxQuantity + " for " + userType + " users. If more boxes are required, please contact us at mangoes.bern@gmail.com.";
-        }
-        return null;
     }
 
     @GetMapping

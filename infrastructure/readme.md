@@ -93,6 +93,9 @@ verify logs
 
 sudo tail -50 /var/log/cloud-init-output.log
 
+for admin access: 
+sudo su -
+
 build and push images to ECR (use ECR URLs from terraform output)
 AWS_ACCOUNT_ID=886121091893 \
  AWS_REGION=eu-central-1 \
@@ -121,7 +124,8 @@ on rama-backend:
 
 1     # From the project root
 2     docker build --no-cache -t 886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-backend:v1 rama-backend/
-3     docker push 886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-backend:v1
+3     
+
 
 2. Update the Instance via SSM:
    Inside your AWS SSM session, force the container to pull the new image and restart.

@@ -21,8 +21,12 @@ admin_emails = "yourname@gmail.com"
 # Gmail App Password for sending notifications:
 mail_password = "abcd efgh klmn opwe"
 
-# Public URL of the application:
-website_url = "http://rama-app.duckdns.org/"
+# Public URL of the application (use https once domain is set up):
+website_url = "https://rama-app.com/"
+
+# Domain setup for Route 53 and HTTPS:
+domain_name = "rama-app.com"
+cert_email  = "your-email@example.com"
 
 # Optional overrides:
 # instance_type = "t3.micro"   # free-tier eligible; use t3.small (2 GB) if Spring Boot OOMs

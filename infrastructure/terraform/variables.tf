@@ -60,3 +60,13 @@ variable "frontend_image" {
   type        = string
   description = "Full ECR image URI for the frontend (e.g. 123456789012.dkr.ecr.eu-central-1.amazonaws.com/rama-frontend:latest)"
 }
+
+variable "domain_name" {
+  type        = string
+  description = "The registered domain name (e.g. rama-app.com)"
+}
+
+variable "cert_email" {
+  type        = string
+  description = "Email address for Let's Encrypt certificate notifications"
+}

@@ -1,6 +1,6 @@
 Update Google OAuth to allow your IP
 
-Step 1 — Go to Google Cloud Console
+Step 1 — Go to Google Cloud Console with kalyani1aki@gmail.com login
 
 👉 https://console.cloud.google.com/apis/credentials
 
@@ -21,3 +21,4 @@ Under Authorized redirect URIs, click Add URI and add:
 http://52.59.57.14
 
 http://rama-app.duckdns.org/
+

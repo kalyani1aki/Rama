@@ -16,10 +16,8 @@ curl -SL "https://github.com/docker/compose/releases/download/v2.29.0/docker-com
 chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
 # ── Data volume (separate EBS — survives instance replacement) ─────────────────
-# Nitro-based t3 instances present /dev/sdf as /dev/nvme1n1 or /dev/nvme2n1
 echo "Waiting for data volume to attach..."
 for i in $(seq 1 30); do
-  # Check for common device names
   DATA_DEVICE=$(lsblk -no PATH | grep -E '/dev/nvme[1-9]n1|/dev/xvdf' | head -n 1)
   if [ -n "$DATA_DEVICE" ]; then 
     echo "Found device: $DATA_DEVICE"
@@ -33,18 +31,12 @@ if [ -z "$DATA_DEVICE" ]; then
   exit 1
 fi
 
-# Only format if no filesystem exists
 if ! blkid $DATA_DEVICE > /dev/null 2>&1; then
-  echo "Formatting $DATA_DEVICE as ext4..."
   mkfs.ext4 $DATA_DEVICE
-else
-  echo "Existing filesystem detected on $DATA_DEVICE. Skipping format."
 fi
 
 mkdir -p /data
-mount $DATA_DEVICE /data || { echo "ERROR: Failed to mount $DATA_DEVICE"; exit 1; }
-
-# Add to fstab if not already present
+mount $DATA_DEVICE /data
 if ! grep -q "/data" /etc/fstab; then
   echo "$DATA_DEVICE /data ext4 defaults,nofail 0 2" >> /etc/fstab
 fi
@@ -57,28 +49,51 @@ aws ecr get-login-password --region ${region} | \
 mkdir -p /home/ec2-user
 cat > /home/ec2-user/docker-compose.yml << 'COMPOSE'
 services:
+  # Reverse Proxy with automatic HTTPS
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - certs:/etc/nginx/certs:ro
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+
+  acme-companion:
+    image: nginxproxy/acme-companion
+    container_name: nginx-proxy-acme
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - certs:/etc/nginx/certs:rw
+      - vhost:/etc/nginx/vhost.d:rw
+      - html:/usr/share/nginx/html:rw
+      - acme:/etc/acme.sh
+    environment:
+      - DEFAULT_EMAIL=${cert_email}
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+    depends_on:
+      - nginx-proxy
+    restart: unless-stopped
+
   backend:
     image: ${backend_image}
-#    TODO remove port
-    ports:
-      - "8080:8080"
     environment:
       - SERVER_PORT=8080
       - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/ramadb
-#      TODO remove spring enabe for h2. clean next 2 lines
-      - SPRING_H2_CONSOLE_ENABLED=true
-      - SPRING_H2_CONSOLE_SETTINGS_WEB_ALLOW_OTHERS=true
       - APP_ADMIN_EMAILS=${admin_emails}
       - MAIL_PASSWORD=${mail_password}
       - WEBSITE_URL=${website_url}
     volumes:
       - /data:/data
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8080'"]
       interval: 30s
@@ -88,19 +103,21 @@ services:
 
   frontend:
     image: ${frontend_image}
-    ports:
-      - "80:80"
     environment:
       - BACKEND_URL=http://backend:8080
+      - VIRTUAL_HOST=${domain_name},www.${domain_name}
+      - VIRTUAL_PORT=80
+      - LETSENCRYPT_HOST=${domain_name},www.${domain_name}
     depends_on:
       backend:
         condition: service_healthy
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
+
+volumes:
+  certs:
+  vhost:
+  html:
+  acme:
 COMPOSE
 
 # ── Pull images and start ──────────────────────────────────────────────────────
@@ -108,7 +125,7 @@ cd /home/ec2-user
 docker compose pull
 docker compose up -d
 
-# ── Systemd service — ensures containers restart after reboot ──────────────────
+# ── Systemd service ────────────────────────────────────────────────────────────
 cat > /etc/systemd/system/rama.service << 'SERVICE'
 [Unit]
 Description=Rama Application (Docker Compose)

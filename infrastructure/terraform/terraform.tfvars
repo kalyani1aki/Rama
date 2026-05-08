@@ -19,7 +19,13 @@ frontend_image = "886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-frontend:
 admin_emails = "kalyani1aki@gmail.com,delhiprasad@gmail.com"
 
 # Public URL of the application:
-website_url = "http://rama-app.duckdns.org/"
+website_url = "https://ramaswiss.ch/"
+
+# Domain setup for Route 53 and HTTPS:
+domain_name = "ramaswiss.ch"
+cert_email  = "kalyani1aki@gmail.com"
+
+
 # Optional overrides:
 # instance_type = "t3.micro"   # free-tier eligible; use t3.small (2 GB) if Spring Boot OOMs
 # key_name      = ""           # leave empty to use SSM Session Manager (no SSH key needed)

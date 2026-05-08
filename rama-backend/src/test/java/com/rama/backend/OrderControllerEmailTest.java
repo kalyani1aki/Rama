@@ -72,4 +72,18 @@ class OrderControllerEmailTest {
 
         verify(emailService, times(1)).sendOrderDeletionNotification(any());
     }
+
+    @Test
+    void createOrder_withHighQuantity_shouldSucceed() {
+        Order order = new Order("Admin User", "Address", "123456", 999, "Location");
+        order.setUserEmail("admin@example.com");
+        
+        when(orderRepository.existsByUserEmail(any())).thenReturn(false);
+        when(orderRepository.save(any())).thenReturn(order);
+
+        ResponseEntity<?> response = orderController.createOrder(order, "admin@example.com");
+
+        assertEquals(200, response.getStatusCode().value());
+        verify(emailService, times(1)).sendOrderConfirmation(any());
+    }
 }

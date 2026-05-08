@@ -38,6 +38,8 @@ resource "aws_instance" "app" {
     admin_emails   = var.admin_emails
     mail_password  = var.mail_password
     website_url    = var.website_url
+    domain_name    = var.domain_name
+    cert_email     = var.cert_email
   })
 
   root_block_device {

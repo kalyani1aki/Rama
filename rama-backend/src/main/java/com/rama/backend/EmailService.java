@@ -11,15 +11,18 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    private final UserService userService;
 
     @Value("${app.website.url}")
     private String websiteUrl;
 
-    public EmailService(JavaMailSender mailSender) {
+    public EmailService(JavaMailSender mailSender, UserService userService) {
         this.mailSender = mailSender;
+        this.userService = userService;
     }
 
     public void sendOrderConfirmation(Order order) {
+        boolean isGoogleUser = userService.isGoogleUser(order.getUserEmail());
         String subject = "Order Confirmation - Mangoes Bern";
         String content = String.format(
                 "<html><body style='font-family: Arial, sans-serif; color: #333;'>" +
@@ -29,18 +32,25 @@ public class EmailService {
                 "<p>We have received your order. We will get back to you shortly with the <strong>exact pickup date</strong>.</p>" +
                 "<div style='background-color: #fff; padding: 15px; border-radius: 5px; border: 1px solid #eee; margin: 20px 0;'>" +
                 "<h3>Order Details:</h3>" +
+                "<p><strong>Email:</strong> %s</p>" +
                 "<p><strong>Quantity:</strong> %d</p>" +
                 "<p><strong>Pickup Location:</strong> %s</p>" +
                 "</div>" +
+                "<p>%s</p>" +
                 "<p>If you have any questions, please contact us at <a href='mailto:mangoes.bern@gmail.com'>mangoes.bern@gmail.com</a>.</p>" +
                 "<p>Best regards,<br>Dilli Prasad Ramannagari</p>" +
                 "</div></body></html>",
-                order.getName(), order.getQuantity(), order.getPickupLocation(), websiteUrl, websiteUrl
+                order.getName(),
+                order.getUserEmail(),
+                order.getQuantity(),
+                order.getPickupLocation(),
+                getWebsiteLinks(isGoogleUser)
         );
         sendHtmlEmail(order.getUserEmail(), subject, content);
     }
 
     public void sendOrderUpdateNotification(Order order) {
+        boolean isGoogleUser = userService.isGoogleUser(order.getUserEmail());
         String subject = "Order Updated - Mangoes Bern";
         String content = String.format(
                 "<html><body style='font-family: Arial, sans-serif; color: #333;'>" +
@@ -50,12 +60,18 @@ public class EmailService {
                 "<p>Your order has been successfully updated. We will get back to you shortly with the <strong>exact pickup date</strong>.</p>" +
                 "<div style='background-color: #fff; padding: 15px; border-radius: 5px; border: 1px solid #eee; margin: 20px 0;'>" +
                 "<h3>New Order Details:</h3>" +
+                "<p><strong>Email:</strong> %s</p>" +
                 "<p><strong>Quantity:</strong> %d</p>" +
                 "<p><strong>Pickup Location:</strong> %s</p>" +
                 "</div>" +
+                "<p>%s</p>" +
                 "<p>Best regards,<br>Dilli Prasad Ramannagari</p>" +
                 "</div></body></html>",
-                order.getName(), order.getQuantity(), order.getPickupLocation(), websiteUrl, websiteUrl
+                order.getName(),
+                order.getUserEmail(),
+                order.getQuantity(),
+                order.getPickupLocation(),
+                getWebsiteLinks(isGoogleUser)
         );
         sendHtmlEmail(order.getUserEmail(), subject, content);
     }
@@ -68,12 +84,21 @@ public class EmailService {
                 "<h2 style='color: #856404;'>Order Cancelled</h2>" +
                 "<p>Dear <strong>%s</strong>,</p>" +
                 "<p>Your order has been cancelled/deleted as requested.</p>" +
+                "<p>To place new order visit: <a href='%s'>%s</a></p>" +
                 "<p>If you did not request this, please contact us immediately at <a href='mailto:mangoes.bern@gmail.com'>mangoes.bern@gmail.com</a>.</p>" +
                 "<p>Best regards,<br>Dilli Prasad Ramannagari</p>" +
                 "</div></body></html>",
-                order.getName()
+                order.getName(), websiteUrl, websiteUrl
         );
         sendHtmlEmail(order.getUserEmail(), subject, content);
+    }
+
+    private String getWebsiteLinks(boolean isGoogleUser) {
+        if (isGoogleUser) {
+            return String.format("<p>To view/update your order visit: <a href='%s'>%s</a></p>", websiteUrl, websiteUrl);
+        } else {
+            return String.format("<p>For additional information visit: <a href='%s'>%s</a></p>", websiteUrl, websiteUrl);
+        }
     }
 
     private void sendHtmlEmail(String to, String subject, String htmlContent) {

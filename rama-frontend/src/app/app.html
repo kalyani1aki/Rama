@@ -5,10 +5,9 @@
       <!-- Logo & Branding -->
       <div class="login-brand">
         <div class="brand-icon-wrap">
-          <img src="images/mango.png" alt="Banganapalli Mango Logo" class="brand-logo-img" />
+          <img src="images/mango.png" alt="RaMa Logo" class="brand-logo-img" />
         </div>
-<!--        <h1 class="brand-name"><span class="brand-accent-header">Ra</span><span class="brand-accent-header">Ma</span></h1>-->
-        <h1 class="brand-name"><span class="brand-accent-header">RaMa</span></h1>
+        <h1 class="brand-name">RaMa</h1>
         <p class="brand-tagline">Premium Banginapalli Mangoes</p>
         <p class="brand-origin">Directly from our farm in India to Switzerland</p>
       </div>
@@ -232,7 +231,7 @@
 
                 <mat-form-field appearance="outline" class="half-width" [class.warning-border]="showQuantityWarning">
                   <mat-label>Quantity (Boxes)</mat-label>
-                  <input matInput type="number" formControlName="quantity" min="1" max="15" />
+                  <input matInput type="number" formControlName="quantity" min="1" [max]="maxQuantity" />
                   <mat-icon matSuffix>inventory_2</mat-icon>
                   @if (orderForm.get('quantity')?.invalid && orderForm.get('quantity')?.touched) {
                     <!--<mat-error>Quantity must be 1–{{maxQuantity}}. For bulk orders contact <a href="mailto:mangoes.bern@gmail.com">mangoes.bern@gmail.com</a></mat-error>-->
@@ -269,11 +268,11 @@
                 Cancel
               </button>
             } @else {
-              <button mat-stroked-button type="button" (click)="orderForm.reset({quantity:1})">
+              <button mat-stroked-button type="button" (click)="orderForm.reset({quantity:1})" [disabled]="orderForm.pristine">
                 <mat-icon>clear</mat-icon> Reset
               </button>
             }
-            <button mat-raised-button color="primary" [disabled]="orderForm.invalid || submitting() || showQuantityWarning || (editingOrder() && orderForm.pristine)" (click)="submitOrder()">
+            <button mat-raised-button color="primary" [disabled]="orderForm.invalid || submitting() || showQuantityWarning || orderForm.pristine" (click)="submitOrder()">
               @if (submitting()) {
                 <mat-progress-spinner diameter="20" mode="indeterminate" color="accent"></mat-progress-spinner>
               } @else {
@@ -299,7 +298,7 @@
               <div class="order-summary">
                 <div class="summary-item">
                   <span class="label">Quantity:</span>
-                  <span class="value">{{ o.quantity }} boxes</span>
+                  <span class="value">{{ o.quantity }} {{ o.quantity === 1 ? 'box' : 'boxes' }}</span>
                 </div>
                 <div class="summary-item">
                   <span class="label">Location:</span>
