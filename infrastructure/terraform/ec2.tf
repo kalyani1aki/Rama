@@ -35,6 +35,7 @@ resource "aws_instance" "app" {
     ecr_registry   = local.ecr_registry
     backend_image  = var.backend_image
     frontend_image = var.frontend_image
+    db_password    = var.db_password
     admin_emails   = var.admin_emails
     mail_password  = var.mail_password
     website_url    = var.website_url

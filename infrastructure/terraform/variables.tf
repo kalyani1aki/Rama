@@ -34,6 +34,12 @@ variable "key_name" {
   default     = ""
 }
 
+variable "db_password" {
+  type        = string
+  description = "Password for the H2 database"
+  sensitive   = true
+}
+
 variable "admin_emails" {
   type        = string
   description = "Comma-separated list of admin email addresses"

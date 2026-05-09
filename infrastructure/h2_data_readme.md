@@ -48,3 +48,40 @@ How to apply and access:
     * JDBC URL: jdbc:h2:file:/data/ramadb
     * User Name: sa
     * Password: (leave empty)
+
+### Secure SSH Tunnel (No Port Opening Required)
+If you want to keep port 8080 closed on the EC2 Security Group for maximum security:
+1. Keep the security group closed (remove the 8080 rule).
+2. Run this command on your local machine:
+
+1    ssh -i your-key.pem -L 8080:localhost:8080 ec2-user@<EC2_PUBLIC_IP>
+3. Now access the console at http://localhost:8080/h2-console on your local machine. H2 will see the connection as coming from "localhost" and won't require the web-allow-others
+   setting.
+
+2. If you don't have a key (SSM recommended)
+   Looking at your variables.tf, the key_name defaults to an empty string, which means you might be using AWS SSM Session Manager instead of traditional SSH.
+
+If you don't have a .pem file, you can still create a secure tunnel using the AWS CLI and the Session Manager plugin:
+
+1 # Tunnel port 8080 from EC2 to your local machine via SSM
+
+aws ssm start-session --target i-04eb187fc477ed8b3  --region eu-central-1 --document-name AWS-StartPortForwardingSession --profile rama-deployer --parameters '{\"portNumber\":[\"8080\"],\"localPortNumber\":[\"8080\"]}'
+nano /home/ec2-user/docker-compose.yml
+
+Find the backend: section and add the ports: lines as shown below:
+1   backend:
+2     image: ...
+3     environment:
+4       - SERVER_PORT=8080
+        **- SPRING_H2_CONSOLE_SETTINGS_WEB_ALLOW_OTHERS=true**
+5       ...
+**-     ports:
+7       - "127.0.0.1:8080:8080"**  # <--- ADD THIS LINE
+
+2 cd /home/ec2-user
+3 docker compose up -d
+
+Open http://localhost:8080/h2-console and use:
+- JDBC URL: jdbc:h2:file:/data/ramadb (The path inside the container)
+- User: sa
+- Password: (leave blank)

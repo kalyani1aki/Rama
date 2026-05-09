@@ -221,6 +221,158 @@
 .summary-item .label { font-weight: 700; color: #795548; min-width: 100px; }
 .summary-item .value { color: #3e2723; }
 .status-placed { color: #43a047; font-weight: 700; }
+
+/* --- Stats Dashboard --- */
+.stats-container {
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.stat-card {
+  text-align: center;
+  border-top: 4px solid #4caf50;
+}
+
+.boxes-stat {
+  border-top-color: #ff9800;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #333;
+  padding: 10px 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-wrapper {
+  height: 300px;
+  position: relative;
+}
+
+.location-stats-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.location-stats-table th, 
+.location-stats-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.location-stats-table th {
+  color: #666;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* --- Table Header Filters --- */
+.header-with-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+}
+
+.column-filter {
+  font-size: 0.75rem !important;
+  font-weight: 400 !important;
+  padding: 4px 8px !important;
+  border: 1px solid #ddd !important;
+  border-radius: 4px !important;
+  background: #f9f9f9 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  color: #333 !important;
+}
+
+.column-filter:focus {
+  outline: none !important;
+  border-color: #ff8f00 !important;
+  background: #fff !important;
+}
+
+.column-filter::placeholder {
+  color: #bbb;
+  font-style: italic;
+}
+
+/* --- Sold Out Card --- */
+.sold-out-card {
+  border-radius: 20px !important;
+  background: #fff9c4 !important;
+  border: 1px solid #fbc02d !important;
+  padding: 10px;
+  margin-bottom: 20px;
+}
+
+.sold-out-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.sold-out-content mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+}
+
+.sold-out-text h3 {
+  margin: 0 0 8px;
+  color: #e65100;
+  font-size: 1.4rem;
+}
+
+.sold-out-text p {
+  margin: 4px 0;
+  color: #5d4037;
+  font-size: 1rem;
+}
+
+/* --- Config Card --- */
+.config-card {
+  border-radius: 12px !important;
+  margin-bottom: 20px;
+  border-top: 4px solid #ff8f00;
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 0;
+}
+
+.config-row span {
+  font-weight: 500;
+  color: #5d4037;
+}
+
+mat-radio-button {
+  margin-right: 16px;
+}
 .summary-actions { margin-top: 12px; display: flex; gap: 16px; }
 
 .primary-login {
@@ -396,7 +548,7 @@ mat-error {
 }
 .admin-badge { background: #fff3e0; color: #e65100; font-weight: 700; }
 
-/* ===== INFO CARD STYLES ===== */
+/* --- Info Card Highlights --- */
 .info-card-highlight {
   border-radius: 20px !important;
   box-shadow: 0 10px 30px rgba(255, 143, 0, 0.1) !important;
@@ -404,6 +556,56 @@ mat-error {
   background: linear-gradient(to right, #ffffff, #fffdfa) !important;
   padding: 16px;
   overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.sold-out-mode {
+  background: #fff9c4 !important;
+  border: 2px solid #fbc02d !important;
+  box-shadow: 0 15px 40px rgba(251, 192, 45, 0.2) !important;
+}
+
+.sold-out-content-full {
+  padding: 40px 20px !important;
+  text-align: center;
+}
+
+.sold-out-header-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.large-info-icon {
+  font-size: 64px !important;
+  width: 64px !important;
+  height: 64px !important;
+}
+
+.sold-out-header-wrap h1 {
+  margin: 0;
+  color: #e65100;
+  font-size: 2.2rem;
+  font-weight: 800;
+}
+
+.sold-out-body {
+  color: #5d4037;
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+.sold-out-main {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.sold-out-body a {
+  color: #e65100;
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 .info-avatar {
@@ -618,6 +820,30 @@ mat-error {
 
   .summary-actions button {
     width: 100%;
+  }
+
+  /* Sold Out Mobile Fixes */
+  .sold-out-header-wrap h1 {
+    font-size: 1.5rem;
+    line-height: 1.3;
+  }
+
+  .sold-out-main {
+    font-size: 1.2rem;
+  }
+
+  .sold-out-body {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  .sold-out-content-full {
+    padding: 24px 12px !important;
+  }
+
+  .large-info-icon {
+    width: 48px !important;
+    height: 48px !important;
   }
 }
 

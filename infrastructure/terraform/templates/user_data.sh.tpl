@@ -88,9 +88,13 @@ services:
     environment:
       - SERVER_PORT=8080
       - SPRING_DATASOURCE_URL=jdbc:h2:file:/data/ramadb
+      - SPRING_H2_CONSOLE_SETTINGS_WEB_ALLOW_OTHERS=true
+      - DB_PASSWORD=${db_password}
       - APP_ADMIN_EMAILS=${admin_emails}
       - MAIL_PASSWORD=${mail_password}
       - WEBSITE_URL=${website_url}
+    ports:
+      - "127.0.0.1:8080:8080"
     volumes:
       - /data:/data
     restart: unless-stopped

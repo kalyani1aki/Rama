@@ -2,6 +2,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { SocialAuthServiceConfig, GoogleLoginProvider, SocialAuthService, SOCIAL_AUTH_CONFIG } from '@abacritt/angularx-social-login';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { environment } from '../environments/environment';
 import { authInterceptor } from './auth.interceptor';
 
@@ -11,6 +12,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor])),
     provideAnimationsAsync(),
     SocialAuthService,
+    provideCharts(withDefaultRegisterables()),
     {
       provide: SOCIAL_AUTH_CONFIG,
       useValue: {

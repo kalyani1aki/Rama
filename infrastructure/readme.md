@@ -133,3 +133,7 @@ on rama-backend:
 1     cd /home/ec2-user
 2     docker compose pull backend
 3     docker compose up -d --force-recreate backend
+
+
+Ec2 alternative login:
+docker login -u AWS -p $(aws ecr get-login-password --region eu-central-1 --profile rama-deployer) 886121091893.dkr.ecr.eu-central-1.amazonaws.com
