@@ -18,6 +18,9 @@ public class Order {
     private String pickupLocation;
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status = OrderStatus.CONFIRMED;
+
     public Order() {}
 
     public Order(String name, String address, String phone, int quantity, String pickupLocation) {
@@ -43,4 +46,6 @@ public class Order {
     public void setPickupLocation(String pickupLocation) { this.pickupLocation = pickupLocation; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public OrderStatus getStatus() { return status; }
+    public void setStatus(OrderStatus status) { this.status = status; }
 }

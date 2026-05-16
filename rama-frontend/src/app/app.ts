@@ -35,13 +35,20 @@ interface Order {
   quantity: number;
   pickupLocation: string;
   createdAt?: string;
+  status?: 'CONFIRMED' | 'WAITING';
 }
 
 interface OrderStats {
   totalOrders: number;
   totalBoxes: number;
+  confirmedOrders: number;
+  confirmedBoxes: number;
+  waitingOrders: number;
+  waitingBoxes: number;
   ordersPerLocation: { [key: string]: number };
   boxesPerLocation: { [key: string]: number };
+  confirmedBoxesPerLocation: { [key: string]: number };
+  waitingBoxesPerLocation: { [key: string]: number };
 }
 
 interface BackendUser {
@@ -93,6 +100,8 @@ export class App implements OnInit, OnDestroy {
     'Zurich (Wallisellerstrasse 1, 8302 Kloten) ',
     'Bern (Bollhölzliweg 17, 3067 Boll)',
     'Baden (Blumenweg 2C, 5300 Turgi)',
+    'Aarau (Büelisackerstrasse 19a, 5622 Waltenschwil)',
+    'Laussane (Chemin des Lentillières 3c, 1023 Crissier)'
   ];
 
   orderForm: FormGroup = this.fb.group({
@@ -129,6 +138,7 @@ export class App implements OnInit, OnDestroy {
 
   stats = signal<OrderStats | null>(null);
   soldOut = signal(false);
+  showWaitingListForm = signal(false);
   adminView = signal<'orders' | 'stats'>('orders');
 
   public barChartOptions: ChartConfiguration['options'] = {
@@ -151,7 +161,7 @@ export class App implements OnInit, OnDestroy {
 
   get maxQuantity(): number {
     if (this.isAdmin) return 999;
-    return this.user()?.provider === 'GOOGLE' ? 15 : 2;
+    return this.user()?.provider === 'GOOGLE' ? 15 : 5;
   }
 
   get websiteUrl(): string {
@@ -165,9 +175,19 @@ export class App implements OnInit, OnDestroy {
 
   get displayedColumns(): string[] {
     const cols = this.isAdmin
-      ? ['userEmail', 'name', 'address', 'phone', 'quantity', 'pickupLocation', 'createdAt']
-      : ['name', 'address', 'phone', 'quantity', 'pickupLocation', 'createdAt'];
+      ? ['userEmail', 'name', 'address', 'phone', 'quantity', 'pickupLocation', 'createdAt', 'status']
+      : ['name', 'address', 'phone', 'quantity', 'pickupLocation', 'createdAt', 'status'];
     return [...cols, 'actions'];
+  }
+
+  confirmOrder(id: string) {
+    this.http.put(`${this.apiUrl}/orders/${id}/confirm`, {}).subscribe({
+      next: () => {
+        this.snackBar.open('Order confirmed from waiting list!', 'OK', { duration: 3000 });
+        this.loadOrders();
+      },
+      error: () => this.snackBar.open('Failed to confirm order', 'Close', { duration: 3000 }),
+    });
   }
 
   ngOnInit() {
@@ -323,8 +343,8 @@ export class App implements OnInit, OnDestroy {
   }
 
   private prepareChartData(stats: OrderStats) {
-    const labels = Object.keys(stats.boxesPerLocation);
-    const data = Object.values(stats.boxesPerLocation);
+    const labels = this.pickupLocations;
+    const data = labels.map((loc) => stats.boxesPerLocation[loc] || 0);
 
     this.barChartData = {
       labels,
@@ -332,8 +352,8 @@ export class App implements OnInit, OnDestroy {
         {
           data,
           label: 'Boxes per Location',
-          backgroundColor: '#4caf50',
-          borderColor: '#388e3c',
+          backgroundColor: '#ff8f00',
+          borderColor: '#e65100',
           borderWidth: 1,
         },
       ],

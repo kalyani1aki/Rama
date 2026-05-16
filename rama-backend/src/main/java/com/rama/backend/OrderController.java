@@ -38,8 +38,13 @@ public class OrderController {
                 : userEmail;
 
         Role role = userService.getRoleByEmail(effectiveEmail);
-        if (role != Role.ADMIN && isSoldOut()) {
-            return ResponseEntity.badRequest().body("Thanks for your interest. The mangoes are sold out for 2026. Please contact us via e-mail at mangoes.bern@gmail.com.");
+        boolean soldOut = isSoldOut();
+        
+        // ADMINs are never restricted by sold out
+        if (role != Role.ADMIN && soldOut) {
+            order.setStatus(OrderStatus.WAITING);
+        } else {
+            order.setStatus(OrderStatus.CONFIRMED);
         }
 
         System.out.println("DEBUG: Creating order. Header email: " + userEmail + ", Body email: " + order.getUserEmail() + ", Effective email: " + effectiveEmail);
@@ -50,13 +55,46 @@ public class OrderController {
         }
 
         if (repository.existsByUserEmail(effectiveEmail)) {
-            return ResponseEntity.badRequest().body("Order is already placed for " + effectiveEmail + ". Please contact mangoes.bern@gmail.com.");
+            return ResponseEntity.badRequest().body("Order NOT placed! An order is already recorded for " + effectiveEmail + ". For changes or updates, please contact us at mangoes.bern@gmail.com.");
         }
 
         order.setUserEmail(effectiveEmail);
         Order savedOrder = repository.save(order);
         try {
-            emailService.sendOrderConfirmation(savedOrder);
+            if (savedOrder.getStatus() == OrderStatus.WAITING) {
+                emailService.sendWaitingListConfirmation(savedOrder);
+            } else {
+                emailService.sendOrderConfirmation(savedOrder);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send order confirmation email: " + e.getMessage());
+        }
+        return ResponseEntity.ok(savedOrder);
+    }
+
+    @PutMapping("/{id}/confirm")
+    public ResponseEntity<?> confirmOrder(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Email", defaultValue = "guest") String userEmail) {
+        
+        Role role = userService.getRoleByEmail(userEmail);
+        if (role != Role.ADMIN) {
+            return ResponseEntity.status(403).build();
+        }
+
+        Order order = repository.findById(id).orElse(null);
+        if (order == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (order.getStatus() != OrderStatus.WAITING) {
+            return ResponseEntity.badRequest().body("Only waiting orders can be confirmed.");
+        }
+
+        order.setStatus(OrderStatus.CONFIRMED);
+        Order savedOrder = repository.save(order);
+        try {
+            emailService.sendOrderConfirmedFromWaitingList(savedOrder);
         } catch (Exception e) {
             System.err.println("Failed to send order confirmation email: " + e.getMessage());
         }
@@ -122,6 +160,20 @@ public class OrderController {
         
         long totalOrders = allOrders.size();
         long totalBoxes = allOrders.stream().mapToLong(Order::getQuantity).sum();
+
+        long confirmedOrders = allOrders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.CONFIRMED || o.getStatus() == null)
+                .count();
+        long confirmedBoxes = allOrders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.CONFIRMED || o.getStatus() == null)
+                .mapToLong(Order::getQuantity).sum();
+
+        long waitingOrders = allOrders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.WAITING)
+                .count();
+        long waitingBoxes = allOrders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.WAITING)
+                .mapToLong(Order::getQuantity).sum();
         
         Map<String, Long> ordersPerLocation = allOrders.stream()
                 .collect(Collectors.groupingBy(Order::getPickupLocation, Collectors.counting()));
@@ -129,7 +181,16 @@ public class OrderController {
         Map<String, Long> boxesPerLocation = allOrders.stream()
                 .collect(Collectors.groupingBy(Order::getPickupLocation, Collectors.summingLong(Order::getQuantity)));
 
-        return ResponseEntity.ok(new OrderStatsDTO(totalOrders, totalBoxes, ordersPerLocation, boxesPerLocation));
+        Map<String, Long> confirmedBoxesPerLocation = allOrders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.CONFIRMED || o.getStatus() == null)
+                .collect(Collectors.groupingBy(Order::getPickupLocation, Collectors.summingLong(Order::getQuantity)));
+
+        Map<String, Long> waitingBoxesPerLocation = allOrders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.WAITING)
+                .collect(Collectors.groupingBy(Order::getPickupLocation, Collectors.summingLong(Order::getQuantity)));
+
+        return ResponseEntity.ok(new OrderStatsDTO(totalOrders, totalBoxes, confirmedOrders, confirmedBoxes, waitingOrders, waitingBoxes, 
+                ordersPerLocation, boxesPerLocation, confirmedBoxesPerLocation, waitingBoxesPerLocation));
     }
 
     @DeleteMapping("/{id}")

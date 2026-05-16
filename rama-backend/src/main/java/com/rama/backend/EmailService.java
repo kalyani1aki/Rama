@@ -49,6 +49,62 @@ public class EmailService {
         sendHtmlEmail(order.getUserEmail(), subject, content);
     }
 
+    public void sendWaitingListConfirmation(Order order) {
+        boolean isGoogleUser = userService.isGoogleUser(order.getUserEmail());
+        String subject = "Waiting List Confirmation - Mangoes Bern";
+        String content = String.format(
+                "<html><body style='font-family: Arial, sans-serif; color: #333;'>" +
+                "<div style='background-color: #fff3cd; padding: 20px; border-radius: 10px; border: 1px solid #ffeeba;'>" +
+                "<h2 style='color: #856404;'>You're on the Waiting List!</h2>" +
+                "<p>Dear <strong>%s</strong>,</p>" +
+                "<p>Thank you for your interest. Our mangoes are currently sold out, but we have added you to our <strong>waiting list</strong>.</p>" +
+                "<p>If more stock becomes available, we will confirm your order and notify you immediately.</p>" +
+                "<div style='background-color: #fff; padding: 15px; border-radius: 5px; border: 1px solid #eee; margin: 20px 0;'>" +
+                "<h3>Waiting List Details:</h3>" +
+                "<p><strong>Email:</strong> %s</p>" +
+                "<p><strong>Quantity:</strong> %d</p>" +
+                "<p><strong>Pickup Location:</strong> %s</p>" +
+                "</div>" +
+                "<p>%s</p>" +
+                "<p>Best regards,<br>Dilli Prasad Ramannagari</p>" +
+                "</div></body></html>",
+                order.getName(),
+                order.getUserEmail(),
+                order.getQuantity(),
+                order.getPickupLocation(),
+                getWebsiteLinks(isGoogleUser)
+        );
+        sendHtmlEmail(order.getUserEmail(), subject, content);
+    }
+
+    public void sendOrderConfirmedFromWaitingList(Order order) {
+        boolean isGoogleUser = userService.isGoogleUser(order.getUserEmail());
+        String subject = "Order Confirmed! - Mangoes Bern";
+        String content = String.format(
+                "<html><body style='font-family: Arial, sans-serif; color: #333;'>" +
+                "<div style='background-color: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #ddd;'>" +
+                "<h2 style='color: #28a745;'>Good news! Your order is confirmed.</h2>" +
+                "<p>Dear <strong>%s</strong>,</p>" +
+                "<p>We are happy to inform you that we have enough stock to fulfill your order from the waiting list.</p>" +
+                "<p>Your order is now <strong>CONFIRMED</strong>. We will get back to you shortly with the exact pickup date.</p>" +
+                "<div style='background-color: #fff; padding: 15px; border-radius: 5px; border: 1px solid #eee; margin: 20px 0;'>" +
+                "<h3>Order Details:</h3>" +
+                "<p><strong>Email:</strong> %s</p>" +
+                "<p><strong>Quantity:</strong> %d</p>" +
+                "<p><strong>Pickup Location:</strong> %s</p>" +
+                "</div>" +
+                "<p>%s</p>" +
+                "<p>Best regards,<br>Dilli Prasad Ramannagari</p>" +
+                "</div></body></html>",
+                order.getName(),
+                order.getUserEmail(),
+                order.getQuantity(),
+                order.getPickupLocation(),
+                getWebsiteLinks(isGoogleUser)
+        );
+        sendHtmlEmail(order.getUserEmail(), subject, content);
+    }
+
     public void sendOrderUpdateNotification(Order order) {
         boolean isGoogleUser = userService.isGoogleUser(order.getUserEmail());
         String subject = "Order Updated - Mangoes Bern";

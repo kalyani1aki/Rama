@@ -12,8 +12,8 @@ project_name = "rama"
 environment  = "dev"
 
 # Set these after pushing images to ECR:
-backend_image  = "886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-backend:v1"
-frontend_image = "886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-frontend:v1"
+backend_image  = "886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-backend:v2"
+frontend_image = "886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-frontend:v2"
 
 # Admin email(s) — these users see all orders and the Export Excel button:
 admin_emails = "kalyani1aki@gmail.com,delhiprasad@gmail.com"

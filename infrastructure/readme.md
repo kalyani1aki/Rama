@@ -87,7 +87,7 @@ Terraform replaces the EC2 instance; the separate EBS data volume is detached an
 login to the instance using SSM Session Manager:
 terraform output ssm_connect_command
 ```bash
-aws ssm start-session --target i-09821001789451c48 --region eu-central-1 --profile rama-deployer
+aws ssm start-session --target i-01d782d2bb4137741 --region eu-central-1 --profile rama-deployer
 
 verify logs
 
@@ -123,7 +123,7 @@ on rama-backend:
 ./mvnw package -DskipTests -q
 
 1     # From the project root
-2     docker build --no-cache -t 886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-backend:v1 rama-backend/
+2     docker build --no-cache -t 886121091893.dkr.ecr.eu-central-1.amazonaws.com/rama-backend:v2 rama-backend/
 3     
 
 

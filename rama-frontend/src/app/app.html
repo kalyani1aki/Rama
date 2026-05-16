@@ -148,8 +148,8 @@
               <div class="info-detail-item">
                 <mat-icon>local_shipping</mat-icon>
                 <div>
-                  <strong>Collection & Delivery</strong>
-                  <p>Orders shall be collected from a <span class="emphasis-collection">designated location</span> in your city.</p>
+                  <strong>Collection / Delivery</strong>
+                  <p>Orders shall be collected from a <span class="emphasis-collection">designated pickup locations</span>.</p>
                 </div>
               </div>
             </div>
@@ -169,6 +169,14 @@
             </div>
             <div class="sold-out-body">
               <p class="sold-out-main">Our premium mangoes are now <strong>fully sold out for the 2026 season.</strong></p>
+              @if (!showWaitingListForm()) {
+                <div class="sold-out-actions" style="margin-top: 48px;">
+                  <button mat-raised-button color="primary" class="join-waiting-btn" (click)="showWaitingListForm.set(true)">
+                    <mat-icon>hourglass_empty</mat-icon>
+                    Join the Waiting List
+                  </button>
+                </div>
+              }
               <br><br>
               <p>For any additional information, please reach out to us at <a href="mailto:mangoes.bern@gmail.com">mangoes.bern@gmail.com</a>.</p>
               <br><br>
@@ -179,15 +187,26 @@
       </mat-card>
 
       <!-- Order Form Card -->
-      @if (((orders()?.length === 0 && !isAdmin) || editingOrder() || (isAdmin && !editingOrder())) && (!soldOut() || isAdmin)) {
-        <mat-card class="form-card">
+      @if (
+        (isAdmin && !editingOrder()) ||
+        editingOrder() ||
+        (orders()?.length === 0 && !isAdmin && (!soldOut() || showWaitingListForm()))
+      ) {
+        <mat-card class="form-card" [class.waiting-list-mode]="soldOut() && !isAdmin">
           <mat-card-header>
             <mat-card-title>
               <mat-icon color="primary">{{ editingOrder() ? 'edit' : 'add_shopping_cart' }}</mat-icon>
-              {{ editingOrder() ? 'Edit your Mangoes Order' : 'Place your Mangoes Order' }}
+              {{ editingOrder() ? 'Edit your Mangoes Order' : (soldOut() && !isAdmin ? 'Join the Waiting List' : 'Place your Mangoes Order') }}
             </mat-card-title>
             <mat-card-subtitle>Directly from Tirupati, India to Swiss</mat-card-subtitle>
           </mat-card-header>
+
+          @if (soldOut() && !isAdmin && !editingOrder()) {
+            <div class="sold-out-alert-small">
+              <mat-icon>info</mat-icon>
+              <span>Mangoes are currently sold out. Join the waiting list, and we'll notify you if stock becomes available!</span>
+            </div>
+          }
 
           <mat-card-content>
             <form [formGroup]="orderForm" (ngSubmit)="submitOrder()" class="order-form">
@@ -255,9 +274,9 @@
                 <div class="guest-caution-box">
                   <mat-icon color="warn">warning</mat-icon>
                   <div class="caution-text">
-                    <strong>Guest Limitation:</strong> You can only place <strong>one order</strong> of up to <strong>2 boxes</strong>.
+                    <strong>Guest Limitation:</strong> Guest users can only place <strong>one order</strong> of up to <strong>5 boxes</strong>.
                   <!--  <strong>Email is mandatory</strong> to receive your order confirmation.-->
-                    For advanced features like <strong>viewing/editing orders</strong>, please
+                    For <strong> larger orders and order management</strong>, please
                     <a href="javascript:void(0)" (click)="logout()" class="login-link">login via Google</a>.
                     <br><br>
                     <small>Please ensure your details are genuine as guest contact details are not verified.</small>
@@ -315,7 +334,9 @@
                 </div>
                 <div class="summary-item">
                   <span class="label">Status:</span>
-                  <span class="value status-placed">Placed on {{ o.createdAt | date:'dd MMM yyyy' }}</span>
+                  <span class="value status-badge" [class.status-waiting]="o.status === 'WAITING'" [class.status-confirmed]="o.status === 'CONFIRMED'">
+                    {{ o.status }} on {{ o.createdAt | date:'dd MMM yyyy' }}
+                  </span>
                 </div>
                 @if (!isGuest) {
                   <div class="summary-actions">
@@ -424,9 +445,22 @@
                         <th mat-header-cell *matHeaderCellDef>Ordered At</th>
                         <td mat-cell *matCellDef="let o">{{ o.createdAt | date:'dd MMM yyyy, HH:mm' }}</td>
                       </ng-container>
+                      <ng-container matColumnDef="status">
+                        <th mat-header-cell *matHeaderCellDef>Status</th>
+                        <td mat-cell *matCellDef="let o">
+                          <span class="status-badge" [class.status-waiting]="o.status === 'WAITING'" [class.status-confirmed]="o.status === 'CONFIRMED'">
+                            {{ o.status }}
+                          </span>
+                        </td>
+                      </ng-container>
                       <ng-container matColumnDef="actions">
                         <th mat-header-cell *matHeaderCellDef></th>
                         <td mat-cell *matCellDef="let o">
+                          @if (o.status === 'WAITING') {
+                            <button mat-icon-button color="accent" (click)="confirmOrder(o.id)" matTooltip="Confirm Order">
+                              <mat-icon>check_circle</mat-icon>
+                            </button>
+                          }
                           <button mat-icon-button color="primary" (click)="editOrder(o)" matTooltip="Edit Order">
                             <mat-icon>edit</mat-icon>
                           </button>
@@ -475,20 +509,31 @@
 
               @if (stats()) {
                 <div class="summary-cards">
-                  <mat-card class="stat-card">
+                  <mat-card class="stat-card total-stat">
                     <mat-card-header>
-                      <mat-card-title>Total Orders</mat-card-title>
+                      <mat-card-title>Total Demand</mat-card-title>
                     </mat-card-header>
                     <mat-card-content>
                       <div class="stat-value">{{ stats()!.totalOrders }}</div>
+                      <div class="stat-subtitle">{{ stats()!.totalBoxes }} boxes (Total)</div>
                     </mat-card-content>
                   </mat-card>
-                  <mat-card class="stat-card boxes-stat">
+                  <mat-card class="stat-card confirmed-stat">
                     <mat-card-header>
-                      <mat-card-title>Total Boxes</mat-card-title>
+                      <mat-card-title>Confirmed Orders</mat-card-title>
                     </mat-card-header>
                     <mat-card-content>
-                      <div class="stat-value">{{ stats()!.totalBoxes }}</div>
+                      <div class="stat-value">{{ stats()!.confirmedOrders }}</div>
+                      <div class="stat-subtitle">{{ stats()!.confirmedBoxes }} boxes</div>
+                    </mat-card-content>
+                  </mat-card>
+                  <mat-card class="stat-card waiting-stat">
+                    <mat-card-header>
+                      <mat-card-title>Waiting List</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="stat-value">{{ stats()!.waitingOrders }}</div>
+                      <div class="stat-subtitle">{{ stats()!.waitingBoxes }} boxes</div>
                     </mat-card-content>
                   </mat-card>
                 </div>
@@ -519,7 +564,9 @@
                           <tr>
                             <th>Location</th>
                             <th>Orders</th>
-                            <th>Boxes</th>
+                            <th>Confirmed</th>
+                            <th>Waiting</th>
+                            <th>Total</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -527,6 +574,8 @@
                             <tr>
                               <td>{{ loc }}</td>
                               <td>{{ stats()!.ordersPerLocation[loc] || 0 }}</td>
+                              <td>{{ stats()!.confirmedBoxesPerLocation[loc] || 0 }}</td>
+                              <td class="waiting-cell">{{ stats()!.waitingBoxesPerLocation[loc] || 0 }}</td>
                               <td><strong>{{ stats()!.boxesPerLocation[loc] || 0 }}</strong></td>
                             </tr>
                           }

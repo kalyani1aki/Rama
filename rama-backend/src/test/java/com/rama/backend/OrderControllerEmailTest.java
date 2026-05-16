@@ -25,10 +25,13 @@ class OrderControllerEmailTest {
     @Mock
     private EmailService emailService;
 
+    @Mock
+    private AppConfigRepository configRepository;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        orderController = new OrderController(orderRepository, userService, emailService);
+        orderController = new OrderController(orderRepository, userService, emailService, configRepository);
     }
 
     @Test
@@ -85,5 +88,25 @@ class OrderControllerEmailTest {
 
         assertEquals(200, response.getStatusCode().value());
         verify(emailService, times(1)).sendOrderConfirmation(any());
+    }
+
+    @Test
+    void createOrder_whenSoldOut_shouldSendWaitingListEmail() {
+        Order order = new Order("Test User", "Address", "123456", 1, "Location");
+        order.setUserEmail("test@example.com");
+        
+        AppConfig soldOutConfig = new AppConfig("SOLD_OUT", "true");
+        when(configRepository.findById("SOLD_OUT")).thenReturn(Optional.of(soldOutConfig));
+        when(orderRepository.existsByUserEmail(any())).thenReturn(false);
+        when(orderRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userService.getRoleByEmail(any())).thenReturn(Role.USER);
+
+        ResponseEntity<?> response = orderController.createOrder(order, "test@example.com");
+
+        assertEquals(200, response.getStatusCode().value());
+        Order savedOrder = (Order) response.getBody();
+        assertEquals(OrderStatus.WAITING, savedOrder.getStatus());
+        verify(emailService, times(1)).sendWaitingListConfirmation(any());
+        verify(emailService, never()).sendOrderConfirmation(any());
     }
 }

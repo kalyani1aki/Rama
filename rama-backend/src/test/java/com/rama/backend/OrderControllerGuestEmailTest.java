@@ -24,10 +24,13 @@ class OrderControllerGuestEmailTest {
     @Mock
     private EmailService emailService;
 
+    @Mock
+    private AppConfigRepository configRepository;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        orderController = new OrderController(orderRepository, userService, emailService);
+        orderController = new OrderController(orderRepository, userService, emailService, configRepository);
     }
 
     @Test
