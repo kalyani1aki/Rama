@@ -107,7 +107,7 @@ Login to ecr
 aws ecr get-login-password --region eu-central-1 --profile rama-deployer | docker login --username AWS --password-stdin 886121091893.dkr.ecr.eu-central-1.amazonaws.com
 
 Then on the EC2 instance, pull and restart the backend:
-aws ssm start-session --target i-09821001789451c48 --region eu-central-1 --profile rama-deployer
+aws ssm start-session --target i-01d782d2bb4137741 --region eu-central-1 --profile rama-deployer
 
 aws ecr get-login-password --region eu-central-1 \
 | docker login --username AWS --password-stdin \

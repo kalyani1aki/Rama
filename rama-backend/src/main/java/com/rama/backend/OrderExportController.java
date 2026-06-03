@@ -11,16 +11,57 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
+import java.util.Set;
+import java.util.HashSet;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/api/orders")
 public class OrderExportController {
 
     private final OrderRepository orderRepository;
+    private final UserRepository userRepository;
     private final UserService userService;
 
-    public OrderExportController(OrderRepository orderRepository, UserService userService) {
+    public OrderExportController(OrderRepository orderRepository, UserRepository userRepository, UserService userService) {
         this.orderRepository = orderRepository;
+        this.userRepository = userRepository;
         this.userService = userService;
+    }
+
+    @GetMapping("/export-emails")
+    public ResponseEntity<String> exportAllEmails(
+            @RequestHeader(value = "X-User-Email", defaultValue = "guest") String userEmail) {
+
+        if (userService.getRoleByEmail(userEmail) != Role.ADMIN) {
+            return ResponseEntity.status(403).build();
+        }
+
+        Set<String> allEmails = new HashSet<>();
+
+        // Collect from Users
+        userRepository.findAll().forEach(u -> {
+            if (u.getEmail() != null) {
+                allEmails.add(u.getEmail().toLowerCase().trim());
+            }
+        });
+
+        // Collect from Orders (including guest emails)
+        orderRepository.findAll().forEach(o -> {
+            if (o.getUserEmail() != null) {
+                allEmails.add(o.getUserEmail().toLowerCase().trim());
+            }
+        });
+
+        String csv = allEmails.stream()
+                .filter(e -> !e.isEmpty())
+                .sorted()
+                .collect(Collectors.joining("\n"));
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"all_emails_2026.csv\"")
+                .contentType(MediaType.TEXT_PLAIN)
+                .body(csv);
     }
 
     @GetMapping("/export")
@@ -36,7 +77,7 @@ public class OrderExportController {
             Sheet sheet = wb.createSheet("Orders");
 
             Row header = sheet.createRow(0);
-            String[] columns = {"ID", "User Email", "Name", "Address", "Phone", "Quantity", "Pickup Location", "Created At"};
+            String[] columns = {"ID", "User Email", "Name", "Address", "Phone", "Quantity", "Pickup Location", "Status", "Is Paid", "Is Picked Up", "Created At"};
             for (int i = 0; i < columns.length; i++) {
                 header.createCell(i).setCellValue(columns[i]);
             }
@@ -51,7 +92,10 @@ public class OrderExportController {
                 row.createCell(4).setCellValue(order.getPhone());
                 row.createCell(5).setCellValue(order.getQuantity());
                 row.createCell(6).setCellValue(order.getPickupLocation() != null ? order.getPickupLocation() : "");
-                row.createCell(7).setCellValue(order.getCreatedAt() != null ? order.getCreatedAt().toString() : "");
+                row.createCell(7).setCellValue(order.getStatus() != null ? order.getStatus().toString() : "");
+                row.createCell(8).setCellValue(order.isPaid() ? "Yes" : "No");
+                row.createCell(9).setCellValue(order.isPickedUp() ? "Yes" : "No");
+                row.createCell(10).setCellValue(order.getCreatedAt() != null ? order.getCreatedAt().toString() : "");
             }
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();

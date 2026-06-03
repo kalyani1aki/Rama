@@ -1,5 +1,6 @@
 package com.rama.backend;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -20,6 +21,12 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     private OrderStatus status = OrderStatus.CONFIRMED;
+
+    @JsonProperty("isPaid")
+    private Boolean isPaid = false;
+
+    @JsonProperty("isPickedUp")
+    private Boolean isPickedUp = false;
 
     public Order() {}
 
@@ -48,4 +55,10 @@ public class Order {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) { this.status = status; }
+
+    public boolean isPaid() { return isPaid != null && isPaid; }
+    public void setPaid(boolean paid) { isPaid = paid; }
+
+    public boolean isPickedUp() { return isPickedUp != null && isPickedUp; }
+    public void setPickedUp(boolean pickedUp) { isPickedUp = pickedUp; }
 }

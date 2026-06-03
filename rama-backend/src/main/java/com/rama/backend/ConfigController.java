@@ -17,25 +17,52 @@ public class ConfigController {
 
     @GetMapping("/sold-out")
     public ResponseEntity<Boolean> isSoldOut() {
-        return ResponseEntity.ok(getSoldOutStatus());
+        return ResponseEntity.ok(getConfigStatus("SOLD_OUT"));
     }
 
     @PostMapping("/sold-out")
     public ResponseEntity<?> setSoldOut(
             @RequestBody boolean soldOut,
             @RequestHeader(value = "X-User-Email", defaultValue = "guest") String userEmail) {
-        
+        return setConfig("SOLD_OUT", soldOut, userEmail);
+    }
+
+    @GetMapping("/logistics-mode")
+    public ResponseEntity<Boolean> isLogisticsMode() {
+        return ResponseEntity.ok(getConfigStatus("LOGISTICS_MODE"));
+    }
+
+    @PostMapping("/logistics-mode")
+    public ResponseEntity<?> setLogisticsMode(
+            @RequestBody boolean status,
+            @RequestHeader(value = "X-User-Email", defaultValue = "guest") String userEmail) {
+        return setConfig("LOGISTICS_MODE", status, userEmail);
+    }
+
+    @GetMapping("/season-closed")
+    public ResponseEntity<Boolean> isSeasonClosed() {
+        return ResponseEntity.ok(getConfigStatus("SEASON_CLOSED"));
+    }
+
+    @PostMapping("/season-closed")
+    public ResponseEntity<?> setSeasonClosed(
+            @RequestBody boolean status,
+            @RequestHeader(value = "X-User-Email", defaultValue = "guest") String userEmail) {
+        return setConfig("SEASON_CLOSED", status, userEmail);
+    }
+
+    private ResponseEntity<?> setConfig(String key, boolean status, String userEmail) {
         if (userService.getRoleByEmail(userEmail) != Role.ADMIN) {
             return ResponseEntity.status(403).build();
         }
 
-        AppConfig config = new AppConfig("SOLD_OUT", String.valueOf(soldOut));
+        AppConfig config = new AppConfig(key, String.valueOf(status));
         repository.save(config);
         return ResponseEntity.ok().build();
     }
 
-    private boolean getSoldOutStatus() {
-        return repository.findById("SOLD_OUT")
+    private boolean getConfigStatus(String key) {
+        return repository.findById(key)
                 .map(config -> Boolean.parseBoolean(config.getConfigValue()))
                 .orElse(false);
     }

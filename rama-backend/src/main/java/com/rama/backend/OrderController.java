@@ -157,6 +157,7 @@ public class OrderController {
         }
 
         List<Order> allOrders = repository.findAll();
+        double pricePerBox = 30.0;
         
         long totalOrders = allOrders.size();
         long totalBoxes = allOrders.stream().mapToLong(Order::getQuantity).sum();
@@ -174,6 +175,11 @@ public class OrderController {
         long waitingBoxes = allOrders.stream()
                 .filter(o -> o.getStatus() == OrderStatus.WAITING)
                 .mapToLong(Order::getQuantity).sum();
+
+        long paidBoxes = allOrders.stream().filter(Order::isPaid).mapToLong(Order::getQuantity).sum();
+        long pickedUpBoxes = allOrders.stream().filter(Order::isPickedUp).mapToLong(Order::getQuantity).sum();
+        double totalRevenue = confirmedBoxes * pricePerBox;
+        double paidRevenue = paidBoxes * pricePerBox;
         
         Map<String, Long> ordersPerLocation = allOrders.stream()
                 .collect(Collectors.groupingBy(Order::getPickupLocation, Collectors.counting()));
@@ -189,8 +195,18 @@ public class OrderController {
                 .filter(o -> o.getStatus() == OrderStatus.WAITING)
                 .collect(Collectors.groupingBy(Order::getPickupLocation, Collectors.summingLong(Order::getQuantity)));
 
+        Map<String, Long> paidBoxesPerLocation = allOrders.stream()
+                .filter(Order::isPaid)
+                .collect(Collectors.groupingBy(Order::getPickupLocation, Collectors.summingLong(Order::getQuantity)));
+
+        Map<String, Long> pickedUpBoxesPerLocation = allOrders.stream()
+                .filter(Order::isPickedUp)
+                .collect(Collectors.groupingBy(Order::getPickupLocation, Collectors.summingLong(Order::getQuantity)));
+
         return ResponseEntity.ok(new OrderStatsDTO(totalOrders, totalBoxes, confirmedOrders, confirmedBoxes, waitingOrders, waitingBoxes, 
-                ordersPerLocation, boxesPerLocation, confirmedBoxesPerLocation, waitingBoxesPerLocation));
+                paidBoxes, pickedUpBoxes, totalRevenue, paidRevenue,
+                ordersPerLocation, boxesPerLocation, confirmedBoxesPerLocation, waitingBoxesPerLocation,
+                paidBoxesPerLocation, pickedUpBoxesPerLocation));
     }
 
     @DeleteMapping("/{id}")
@@ -215,4 +231,48 @@ public class OrderController {
 
         return ResponseEntity.status(403).build();
     }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateStatus(
+            @PathVariable String id,
+            @RequestBody StatusUpdateRequest request,
+            @RequestHeader(value = "X-User-Email", defaultValue = "guest") String userEmail) {
+        
+        Role role = userService.getRoleByEmail(userEmail);
+        if (role != Role.ADMIN) {
+            return ResponseEntity.status(403).build();
+        }
+
+        Order order = repository.findById(id).orElse(null);
+        if (order == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (request.isPaid() != null) order.setPaid(request.isPaid());
+        if (request.isPickedUp() != null) order.setPickedUp(request.isPickedUp());
+
+        return ResponseEntity.ok(repository.save(order));
+    }
+
+    @PutMapping("/bulk-status")
+    public ResponseEntity<?> updateBulkStatus(
+            @RequestBody BulkStatusUpdateRequest request,
+            @RequestHeader(value = "X-User-Email", defaultValue = "guest") String userEmail) {
+        
+        Role role = userService.getRoleByEmail(userEmail);
+        if (role != Role.ADMIN) {
+            return ResponseEntity.status(403).build();
+        }
+
+        List<Order> orders = repository.findAllById(request.ids());
+        for (Order order : orders) {
+            if (request.isPaid() != null) order.setPaid(request.isPaid());
+            if (request.isPickedUp() != null) order.setPickedUp(request.isPickedUp());
+        }
+
+        return ResponseEntity.ok(repository.saveAll(orders));
+    }
+
+    record StatusUpdateRequest(Boolean isPaid, Boolean isPickedUp) {}
+    record BulkStatusUpdateRequest(List<String> ids, Boolean isPaid, Boolean isPickedUp) {}
 }

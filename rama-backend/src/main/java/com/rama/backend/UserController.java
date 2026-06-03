@@ -20,5 +20,12 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    @PostMapping("/notify-me")
+    public ResponseEntity<?> notifyMe(@RequestBody String email) {
+        // Simple registration for next season
+        userService.loginOrRegister(email, "2027 Prospect");
+        return ResponseEntity.ok().build();
+    }
+
     record LoginRequest(String email, String name) {}
 }

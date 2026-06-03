@@ -13,7 +13,17 @@
       </div>
 
       <mat-card-content class="login-actions">
-        <p class="login-prompt">Order your mangoes now!</p>
+        <p class="login-prompt">
+          @if (seasonClosed()) {
+            Season 2026 is now closed. Thank you!
+          } @else if (logisticsMode()) {
+            Mangoes arriving soon! Working on logistics.
+          } @else if (soldOut()) {
+            Mangoes currently sold out.
+          } @else {
+            Order your mangoes now!
+          }
+        </p>
 
         <!-- Google Sign-In (Primary Action) -->
         <div class="google-btn-wrap primary-login">
@@ -93,7 +103,7 @@
         }
         <div class="user-info">
           <span class="user-name">{{ user()!.name }}</span>
-          @if (isAdmin) {
+          @if (isAdmin()) {
             <span class="role-badge admin-badge">
               <mat-icon class="role-icon">admin_panel_settings</mat-icon>
               Admin
@@ -106,10 +116,10 @@
       </div>
     </div>
 
-    <div class="content">
+    <div class="content" [class.admin-content]="isAdmin()">
       <!-- Info Card: About the Mangoes, Price & Delivery -->
-      <mat-card class="info-card-highlight" [class.sold-out-mode]="soldOut() && !isAdmin">
-        @if (!soldOut() || isAdmin) {
+      <mat-card class="info-card-highlight" [class.sold-out-mode]="(soldOut() || logisticsMode() || seasonClosed()) && !isAdmin()">
+        @if (!(soldOut() || logisticsMode() || seasonClosed()) || isAdmin()) {
           <mat-card-header>
             <div mat-card-avatar class="info-avatar">
               <img src="images/mango_green.png" alt="Mango" class="info-avatar-img" />
@@ -163,54 +173,93 @@
           </mat-card-content>
         } @else {
           <mat-card-content class="sold-out-content-full">
-            <div class="sold-out-header-wrap">
-              <img src="images/mango_green.png" alt="Mango" class="large-info-icon" />
-              <h1>Thank you for your Incredible interest and support!</h1>
-            </div>
-            <div class="sold-out-body">
-              <p class="sold-out-main">Our premium mangoes are now <strong>fully sold out for the 2026 season.</strong></p>
-              @if (!showWaitingListForm()) {
-                <div class="sold-out-actions" style="margin-top: 48px;">
+            @if (seasonClosed()) {
+              <div class="sold-out-header-wrap">
+                <img src="images/mango.png" alt="Mango" class="large-info-icon" />
+                <h1>Thank You!</h1>
+              </div>
+              <div class="sold-out-body">
+                <p class="sold-out-main">Thank you all for the overwhelming response and the wonderful feedback on our mangoes!</p>
+                <br>
+                <p>We are now closed for the 2026 season and look forward to serving you again next year.</p>
+                
+                <div class="notify-me-container">
+                  <h3>Get notified for the 2027 season</h3>
+                  <div class="notify-form-wrap">
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <mat-label>Email Address</mat-label>
+                      <input matInput placeholder="your@email.com" #notifyEmail (keyup.enter)="submitNotification(notifyEmail.value); notifyEmail.value=''">
+                      <mat-icon matSuffix>mail</mat-icon>
+                    </mat-form-field>
+                    <button mat-raised-button color="primary" (click)="submitNotification(notifyEmail.value); notifyEmail.value=''" [disabled]="submitting()">
+                      Notify Me
+                    </button>
+                  </div>
+                </div>
+
+                <br><br>
+                <p>For any additional information, please reach out to us at <a href="mailto:mangoes.bern@gmail.com">mangoes.bern@gmail.com</a>.</p>
+              </div>
+            } @else if (logisticsMode()) {
+              <div class="sold-out-header-wrap">
+                <img src="images/mango_green.png" alt="Mango" class="large-info-icon" />
+                <h1>Coming Soon!</h1>
+              </div>
+              <div class="sold-out-body">
+                <p class="sold-out-main">Our premium mangoes will soon arrive in Switzerland!</p>
+                <br>
+                <p>We are currently working on the logistics to serve you better and ensure a smooth pickup process.</p>
+                <br><br>
+                <p>Stay tuned for updates on pickup dates and locations.</p>
+                <br>
+                <p>For any additional information, please reach out to us at <a href="mailto:mangoes.bern@gmail.com">mangoes.bern@gmail.com</a>.</p>
+              </div>
+            } @else if (soldOut()) {
+              <div class="sold-out-header-wrap">
+                <img src="images/mango_green.png" alt="Mango" class="large-info-icon" />
+                <h1>Sold Out</h1>
+              </div>
+              <div class="sold-out-body">
+                <p class="sold-out-main">Our mangoes are currently sold out for the 2026 season.</p>
+                <br>
+                <p>You can still join the waiting list below, and we will notify you if any stock becomes available.</p>
+                <div class="sold-out-actions" style="margin-top: 24px;">
                   <button mat-raised-button color="primary" class="join-waiting-btn" (click)="showWaitingListForm.set(true)">
                     <mat-icon>hourglass_empty</mat-icon>
                     Join the Waiting List
                   </button>
                 </div>
-              }
-              <br><br>
-              <p>For any additional information, please reach out to us at <a href="mailto:mangoes.bern@gmail.com">mangoes.bern@gmail.com</a>.</p>
-              <br><br>
-              <p>Stay tuned to this page for future announcements.</p>
-            </div>
+              </div>
+            }
           </mat-card-content>
         }
       </mat-card>
 
       <!-- Order Form Card -->
       @if (
-        (isAdmin && !editingOrder()) ||
+        (isAdmin() && !editingOrder()) ||
         editingOrder() ||
-        (orders()?.length === 0 && !isAdmin && (!soldOut() || showWaitingListForm()))
+        (orders()?.length === 0 && !isAdmin() && (!(soldOut() || logisticsMode() || seasonClosed()) || (soldOut() && !logisticsMode() && !seasonClosed() && showWaitingListForm())))
       ) {
-        <mat-card class="form-card" [class.waiting-list-mode]="soldOut() && !isAdmin">
+        <mat-card class="form-card" [class.waiting-list-mode]="soldOut() && !isAdmin()">
           <mat-card-header>
             <mat-card-title>
               <mat-icon color="primary">{{ editingOrder() ? 'edit' : 'add_shopping_cart' }}</mat-icon>
-              {{ editingOrder() ? 'Edit your Mangoes Order' : (soldOut() && !isAdmin ? 'Join the Waiting List' : 'Place your Mangoes Order') }}
+              {{ editingOrder() ? 'Edit your Mangoes Order' : (soldOut() && !isAdmin() ? 'Join the Waiting List' : 'Place your Mangoes Order') }}
             </mat-card-title>
             <mat-card-subtitle>Directly from Tirupati, India to Swiss</mat-card-subtitle>
           </mat-card-header>
 
-          @if (soldOut() && !isAdmin && !editingOrder()) {
+          @if (soldOut() && !isAdmin() && !editingOrder()) {
             <div class="sold-out-alert-small">
               <mat-icon>info</mat-icon>
-              <span>Mangoes are currently sold out. Join the waiting list, and we'll notify you if stock becomes available!</span>
+              <span>The 2026 season is now closed. We look forward to seeing you again next year!</span>
             </div>
           }
 
           <mat-card-content>
             <form [formGroup]="orderForm" (ngSubmit)="submitOrder()" class="order-form">
-              @if (isGuest && !editingOrder()) {
+              @if (isGuest() && !editingOrder()) {
                 <mat-form-field appearance="outline" class="full-width">
                   <mat-label>Your Email</mat-label>
                   <input matInput formControlName="userEmail" placeholder="e.g. your@email.com" />
@@ -270,7 +319,7 @@
                   <mat-icon matSuffix>location_on</mat-icon>
                 </mat-form-field>
 
-              @if (isGuest) {
+              @if (isGuest()) {
                 <div class="guest-caution-box">
                   <mat-icon color="warn">warning</mat-icon>
                   <div class="caution-text">
@@ -308,7 +357,7 @@
       }
 
       <!-- My Orders (Non-Admin View) -->
-      @if (orders()?.length! > 0 && !isAdmin && !editingOrder()) {
+      @if (orders()?.length! > 0 && !isAdmin() && !editingOrder()) {
         <mat-card class="table-card">
           <mat-card-header>
             <mat-card-title>
@@ -338,7 +387,19 @@
                     {{ o.status }} on {{ o.createdAt | date:'dd MMM yyyy' }}
                   </span>
                 </div>
-                @if (!isGuest) {
+                <div class="summary-item">
+                  <span class="label">Pickup:</span>
+                  <span class="value status-badge" [class.status-confirmed]="o.isPickedUp" [class.status-waiting]="!o.isPickedUp">
+                    {{ o.isPickedUp ? 'PICKED UP' : 'NOT PICKED UP' }}
+                  </span>
+                </div>
+                <div class="summary-item">
+                  <span class="label">Payment:</span>
+                  <span class="value status-badge" [class.status-confirmed]="o.isPaid" [class.status-waiting]="!o.isPaid">
+                    {{ o.isPaid ? 'PAID' : 'UNPAID' }}
+                  </span>
+                </div>
+                @if (!isGuest()) {
                   <div class="summary-actions">
                     <button mat-flat-button color="primary" (click)="editOrder(o)" [disabled]="soldOut()">
                       <mat-icon>edit</mat-icon> Edit Order
@@ -355,8 +416,8 @@
       }
 
       <!-- Admin Table -->
-      @if (isAdmin) {
-        <mat-tab-group (selectedHeaderChange)="loadOrders()">
+      @if (isAdmin()) {
+        <mat-tab-group (selectedTabChange)="loadOrders()">
           <mat-tab label="All Orders">
             <mat-card class="table-card">
               <mat-card-header>
@@ -365,12 +426,34 @@
                   All Orders
                 </mat-card-title>
                 <mat-card-subtitle>{{ orders()?.length || 0 }} order(s) placed</mat-card-subtitle>
+
+                @if (selection.hasValue()) {
+                  <div class="bulk-actions">
+                    <span class="selection-count">{{ selection.selected.length }} selected</span>
+                    <button mat-stroked-button color="primary" [matMenuTriggerFor]="bulkMenu">
+                      Bulk Actions <mat-icon>expand_more</mat-icon>
+                    </button>
+                    <mat-menu #bulkMenu="matMenu">
+                      <button mat-menu-item (click)="bulkUpdateStatus('isPaid', true)">Mark as Paid</button>
+                      <button mat-menu-item (click)="bulkUpdateStatus('isPaid', false)">Mark as Unpaid</button>
+                      <mat-divider></mat-divider>
+                      <button mat-menu-item (click)="bulkUpdateStatus('isPickedUp', true)">Mark as Picked Up</button>
+                      <button mat-menu-item (click)="bulkUpdateStatus('isPickedUp', false)">Mark as Not Picked Up</button>
+                    </mat-menu>
+                  </div>
+                }
+
                 <button mat-icon-button (click)="loadOrders()" matTooltip="Refresh" style="margin-left:auto">
                   <mat-icon>refresh</mat-icon>
                 </button>
-                <button mat-stroked-button color="primary" (click)="downloadExcel()" matTooltip="Download all orders as Excel">
-                  <mat-icon>download</mat-icon> Export Excel
-                </button>
+                <div class="header-actions-group">
+                  <button mat-stroked-button color="accent" (click)="downloadEmails()" matTooltip="Download all unique user/order emails">
+                    <mat-icon>mail</mat-icon> Export Emails
+                  </button>
+                  <button mat-stroked-button color="primary" (click)="downloadExcel()" matTooltip="Download all orders as Excel">
+                    <mat-icon>download</mat-icon> Export Excel
+                  </button>
+                </div>
               </mat-card-header>
 
               <mat-card-content>
@@ -384,6 +467,24 @@
                 } @else {
                   <div class="table-wrapper" [formGroup]="filterForm">
                     <table mat-table [dataSource]="dataSource" class="orders-table">
+                      <!-- Selection Column -->
+                      <ng-container matColumnDef="select">
+                        <th mat-header-cell *matHeaderCellDef>
+                          <mat-checkbox (change)="$event ? masterToggle() : null"
+                                        [checked]="selection.hasValue() && isAllSelected()"
+                                        [indeterminate]="selection.hasValue() && !isAllSelected()"
+                                        color="primary">
+                          </mat-checkbox>
+                        </th>
+                        <td mat-cell *matCellDef="let row">
+                          <mat-checkbox (click)="$event.stopPropagation()"
+                                        (change)="$event ? selection.toggle(row) : null"
+                                        [checked]="selection.isSelected(row)"
+                                        color="primary">
+                          </mat-checkbox>
+                        </td>
+                      </ng-container>
+
                       <!-- Admin-only: ordered by column -->
                       <ng-container matColumnDef="userEmail">
                         <th mat-header-cell *matHeaderCellDef>
@@ -453,6 +554,23 @@
                           </span>
                         </td>
                       </ng-container>
+
+                      <!-- Paid Column -->
+                      <ng-container matColumnDef="isPaid">
+                        <th mat-header-cell *matHeaderCellDef>Paid</th>
+                        <td mat-cell *matCellDef="let o">
+                          <mat-checkbox [checked]="o.isPaid" (change)="toggleStatus(o, 'isPaid')" color="primary"></mat-checkbox>
+                        </td>
+                      </ng-container>
+
+                      <!-- Picked Up Column -->
+                      <ng-container matColumnDef="isPickedUp">
+                        <th mat-header-cell *matHeaderCellDef>Picked Up</th>
+                        <td mat-cell *matCellDef="let o">
+                          <mat-checkbox [checked]="o.isPickedUp" (change)="toggleStatus(o, 'isPickedUp')" color="primary"></mat-checkbox>
+                        </td>
+                      </ng-container>
+
                       <ng-container matColumnDef="actions">
                         <th mat-header-cell *matHeaderCellDef></th>
                         <td mat-cell *matCellDef="let o">
@@ -478,19 +596,37 @@
             </mat-card>
           </mat-tab>
 
-          <mat-tab label="Dashboard">
+          <mat-tab label="Statistics">
             <div class="stats-container">
               <mat-card class="config-card">
                 <mat-card-header>
                   <mat-card-title>Application Configuration</mat-card-title>
                 </mat-card-header>
                 <mat-card-content>
-                  <div class="config-row">
-                    <span>Sold Out for 2026:</span>
-                    <mat-radio-group [value]="soldOut()" (change)="onSoldOutToggle($event.value)">
-                      <mat-radio-button [value]="true">Yes (Disable Orders)</mat-radio-button>
-                      <mat-radio-button [value]="false">No (Enable Orders)</mat-radio-button>
-                    </mat-radio-group>
+                  <div class="config-grid">
+                    <div class="config-row">
+                      <span>Sold Out for 2026:</span>
+                      <mat-radio-group [value]="soldOut()" (change)="onSoldOutToggle($event.value)">
+                        <mat-radio-button [value]="true">Yes</mat-radio-button>
+                        <mat-radio-button [value]="false">No</mat-radio-button>
+                      </mat-radio-group>
+                    </div>
+
+                    <div class="config-row">
+                      <span>Logistics Mode:</span>
+                      <mat-radio-group [value]="logisticsMode()" (change)="onLogisticsModeToggle($event.value)">
+                        <mat-radio-button [value]="true">Enabled</mat-radio-button>
+                        <mat-radio-button [value]="false">Disabled</mat-radio-button>
+                      </mat-radio-group>
+                    </div>
+
+                    <div class="config-row">
+                      <span>Season Closed:</span>
+                      <mat-radio-group [value]="seasonClosed()" (change)="onSeasonClosedToggle($event.value)">
+                        <mat-radio-button [value]="true">Yes</mat-radio-button>
+                        <mat-radio-button [value]="false">No</mat-radio-button>
+                      </mat-radio-group>
+                    </div>
                   </div>
                 </mat-card-content>
               </mat-card>
@@ -536,6 +672,33 @@
                       <div class="stat-subtitle">{{ stats()!.waitingBoxes }} boxes</div>
                     </mat-card-content>
                   </mat-card>
+                  <mat-card class="stat-card revenue-stat">
+                    <mat-card-header>
+                      <mat-card-title>Total Revenue</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="stat-value">{{ stats()!.totalRevenue }} CHF</div>
+                      <div class="stat-subtitle">From {{ stats()!.confirmedBoxes }} boxes</div>
+                    </mat-card-content>
+                  </mat-card>
+                  <mat-card class="stat-card paid-stat">
+                    <mat-card-header>
+                      <mat-card-title>Payments Received</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="stat-value">{{ stats()!.paidRevenue }} CHF</div>
+                      <div class="stat-subtitle">{{ stats()!.paidBoxes }} boxes paid</div>
+                    </mat-card-content>
+                  </mat-card>
+                  <mat-card class="stat-card pickup-stat">
+                    <mat-card-header>
+                      <mat-card-title>Collection Status</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="stat-value">{{ stats()!.pickedUpBoxes }}</div>
+                      <div class="stat-subtitle">Boxes picked up</div>
+                    </mat-card-content>
+                  </mat-card>
                 </div>
 
                 <div class="stats-grid">
@@ -556,27 +719,29 @@
 
                   <mat-card class="location-table-card">
                     <mat-card-header>
-                      <mat-card-title>Stats per Location</mat-card-title>
+                      <mat-card-title>Detailed Stats per Location</mat-card-title>
                     </mat-card-header>
                     <mat-card-content>
                       <table class="location-stats-table">
                         <thead>
                           <tr>
                             <th>Location</th>
-                            <th>Orders</th>
-                            <th>Confirmed</th>
-                            <th>Waiting</th>
-                            <th>Total</th>
+                            <th>Total Bx</th>
+                            <th>Conf. Bx</th>
+                            <th>Wait. Bx</th>
+                            <th>Paid Bx</th>
+                            <th>Picked Bx</th>
                           </tr>
                         </thead>
                         <tbody>
                           @for (loc of pickupLocations; track loc) {
                             <tr>
                               <td>{{ loc }}</td>
-                              <td>{{ stats()!.ordersPerLocation[loc] || 0 }}</td>
-                              <td>{{ stats()!.confirmedBoxesPerLocation[loc] || 0 }}</td>
-                              <td class="waiting-cell">{{ stats()!.waitingBoxesPerLocation[loc] || 0 }}</td>
-                              <td><strong>{{ stats()!.boxesPerLocation[loc] || 0 }}</strong></td>
+                              <td><strong>{{ stats()?.boxesPerLocation?.[loc] || 0 }}</strong></td>
+                              <td>{{ stats()?.confirmedBoxesPerLocation?.[loc] || 0 }}</td>
+                              <td class="waiting-cell">{{ stats()?.waitingBoxesPerLocation?.[loc] || 0 }}</td>
+                              <td class="paid-cell">{{ stats()?.paidBoxesPerLocation?.[loc] || 0 }}</td>
+                              <td class="pickup-cell">{{ stats()?.pickedUpBoxesPerLocation?.[loc] || 0 }}</td>
                             </tr>
                           }
                         </tbody>
@@ -587,6 +752,95 @@
               } @else {
                 <div class="centered"><mat-progress-spinner mode="indeterminate" diameter="48"></mat-progress-spinner></div>
               }
+            </div>
+          </mat-tab>
+
+          <mat-tab label="Send Emails">
+            <div class="admin-emails-container">
+              <mat-card class="email-card">
+                <mat-card-header>
+                  <mat-card-title>Send Arrival Update</mat-card-title>
+                  <mat-card-subtitle>Notify all customers about the scheduled arrival on 29.05.2026</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="email-preview-text">
+                    <strong>Message Content:</strong><br>
+                    <p>Hello,<br><br>As an update to your reserved mango boxes:<br><br>The mangoes are on their way and are scheduled to arrive on 29.05.2026. Pickup details will be shared via email by 30.05.2026.<br><br>For your order details please visit: <a href="https://ramaswiss.ch">https://ramaswiss.ch</a></p>
+                  </div>
+                </mat-card-content>
+                <mat-card-actions align="end">
+                  <button mat-raised-button color="primary" [disabled]="submitting()" (click)="onSendGenericEmail()">
+                    <mat-icon>send</mat-icon> Send Arrival Update to All
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+
+              <ng-template #confirmSendGenericEmailDialog>
+                <h2 mat-dialog-title>Confirm Send Email</h2>
+                <mat-dialog-content>
+                  <p>Are you sure you want to send the arrival update email to <strong>all users</strong>?</p>
+                  <div class="email-preview-box">
+                    <strong>Subject:</strong> Mangoes Arrival Update - Mangoes Bern<br><br>
+                    <strong>Body:</strong> Hello,<br><br>As an update to your reserved mango boxes:<br><br>The mangoes are on their way and are scheduled to arrive on 29.05.2026. Pickup details will be shared via email by 30.05.2026.<br><br>For your order details please visit: https://ramaswiss.ch
+                  </div>
+                </mat-dialog-content>
+                <mat-dialog-actions align="end">
+                  <button mat-button mat-dialog-close>Cancel</button>
+                  <button mat-raised-button color="primary" [mat-dialog-close]="true">Yes, Send Email</button>
+                </mat-dialog-actions>
+              </ng-template>
+
+              <mat-card class="email-card" style="margin-top: 24px;">
+                <mat-card-header>
+                  <mat-card-title>Pickup Confirmation Emails</mat-card-title>
+                  <mat-card-subtitle>Select locations and send specific or collective pickup details</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="pickup-email-grid">
+                    @for (form of pickupEmailForms; track $index) {
+                      <div class="pickup-location-row" [formGroup]="form">
+                        <div class="location-header-row">
+                          <mat-checkbox formControlName="selected" color="primary"></mat-checkbox>
+                          <div class="location-name">{{ pickupLocations[$index] }}</div>
+                        </div>
+                        <div class="pickup-inputs" [class.disabled-opacity]="!form.get('selected')?.value">
+                          <mat-form-field appearance="outline">
+                            <mat-label>Pickup Time</mat-label>
+                            <input matInput formControlName="time" placeholder="e.g. Saturday, 10:00 - 12:00" />
+                          </mat-form-field>
+                          <mat-form-field appearance="outline">
+                            <mat-label>Contact Person</mat-label>
+                            <input matInput formControlName="contactPerson" placeholder="Name" />
+                          </mat-form-field>
+                          <mat-form-field appearance="outline">
+                            <mat-label>Contact Phone</mat-label>
+                            <input matInput formControlName="contactPhone" placeholder="Phone" />
+                          </mat-form-field>
+                        </div>                      </div>
+                      @if (!$last) {
+                        <mat-divider></mat-divider>
+                      }
+                    }
+                  </div>
+                </mat-card-content>
+                <mat-card-actions align="end">
+                  <button mat-raised-button color="accent" [disabled]="submitting()" (click)="onSendPickupEmails()">
+                    <mat-icon>mail_outline</mat-icon> Send Pickup Information
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+
+              <ng-template #confirmSendPickupEmailsDialog>
+                <h2 mat-dialog-title>Confirm Send Pickup Emails</h2>
+                <mat-dialog-content>
+                  <p>Are you sure you want to send individual pickup confirmation emails to users at the selected locations?</p>
+                  <p><strong>Note:</strong> Each user will only receive details relevant to their chosen pickup location.</p>
+                </mat-dialog-content>
+                <mat-dialog-actions align="end">
+                  <button mat-button mat-dialog-close>Cancel</button>
+                  <button mat-raised-button color="accent" [mat-dialog-close]="true">Yes, Send Emails</button>
+                </mat-dialog-actions>
+              </ng-template>
             </div>
           </mat-tab>
         </mat-tab-group>
